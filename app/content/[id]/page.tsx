@@ -1,178 +1,172 @@
 import { notFound } from 'next/navigation';
-import { Client } from '@notionhq/client';
 import Link from 'next/link';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import { Client } from '@notionhq/client';
 
-const notion = new Client({
-  auth: process.env.NOTION_API_KEY,
-});
+const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
-async function getContent(id: string) {
+async function getContentData(contentId: string) {
   try {
-    const page = await notion.pages.retrieve({ page_id: id });
-    return page;
+    const content = await notion.pages.retrieve({ page_id: contentId });
+    return content;
   } catch (error) {
+    console.error('Error fetching content:', error);
     return null;
   }
 }
 
-async function getPeople(personIds: string[]) {
-  const people = [];
-  for (const id of personIds) {
-    try {
-      const person = await notion.pages.retrieve({ page_id: id });
-      people.push(person);
-    } catch (error) {
-      console.error('Error fetching person:', error);
-    }
+async function getRelatedPeople(personIds: string[]) {
+  if (personIds.length === 0) return [];
+
+  try {
+    const people = await Promise.all(
+      personIds.map((id) => notion.pages.retrieve({ page_id: id }))
+    );
+    return people;
+  } catch (error) {
+    console.error('Error fetching related people:', error);
+    return [];
   }
-  return people;
 }
 
-export default async function ContentPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  
-  const content = await getContent(id);
-  
+export default async function ContentPage({ params }: { params: { id: string } }) {
+  const content = await getContentData(params.id);
+
   if (!content) {
     notFound();
   }
 
   // @ts-ignore
-  const title = content.properties['タイトル']?.title[0]?.plain_text || '無題';
-  // @ts-ignore
-  const description = content.properties['説明文']?.rich_text[0]?.plain_text || '';
-  // @ts-ignore
-  const thumbnail = content.properties['サムネイル']?.files[0]?.file?.url || content.properties['サムネイル']?.files[0]?.external?.url || '';
-  // @ts-ignore
-  const categories = content.properties['カテゴリ']?.multi_select || [];
-  // @ts-ignore
-  const genres = content.properties['ジャンル']?.multi_select || [];
-  // @ts-ignore
-  const maker = content.properties['メーカー']?.select?.name || '';
-  // @ts-ignore
-  const views = content.properties['閲覧数']?.number || 0;
-  // @ts-ignore
-  const sales = content.properties['売上']?.number || 0;
-  // @ts-ignore
-  const publishDate = content.properties['公開日']?.date?.start || '';
-  // @ts-ignore
-  const affiliateUrl = content.properties['アフィリエイトURL']?.url || '';
-  // @ts-ignore
-  const performers = content.properties['出演者']?.relation || [];
+  const properties = content.properties;
+  const title = properties['タイトル']?.title[0]?.plain_text || '無題';
+  const thumbnail = properties['サムネイル']?.files[0]?.file?.url || properties['サムネイル']?.files[0]?.external?.url || '';
+  const description = properties['説明文']?.rich_text[0]?.plain_text || '';
+  const releaseDate = properties['公開日']?.date?.start || '';
+  const views = properties['閲覧数']?.number || 0;
+  const sales = properties['売上']?.number || 0;
+  const genre = properties['ジャンル']?.select?.name || '';
+  const maker = properties['メーカー']?.rich_text[0]?.plain_text || '';
+  const affiliateUrl = properties['アフィリエイトURL']?.url || '';
+  const categories = properties['カテゴリ']?.multi_select || [];
+  const personRelations = properties['出演者']?.relation || [];
 
-  const people = await getPeople(performers.map((p: any) => p.id));
+  const people = await getRelatedPeople(personRelations.map((r: any) => r.id));
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <Link href="/" className="text-blue-600 hover:underline mb-4 inline-block">
-          ← ホームに戻る
-        </Link>
+    <>
+      <Header />
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-5xl mx-auto px-4">
+          {/* パンくずリスト */}
+          <nav className="mb-6 text-sm text-gray-600">
+            <Link href="/" className="hover:text-pink-500">ホーム</Link>
+            <span className="mx-2">/</span>
+            <span className="text-black">{title}</span>
+          </nav>
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          {thumbnail && (
-            <img
-              src={thumbnail}
-              alt={title}
-              className="w-full h-96 object-cover"
-            />
-          )}
-          
-          <div className="p-8">
-            <h1 className="text-3xl font-bold mb-4">{title}</h1>
-            
-            <div className="flex flex-wrap gap-2 mb-4">
-              {categories.map((cat: any) => (
-                <span
-                  key={cat.name}
-                  className="px-3 py-1 bg-pink-100 text-pink-600 rounded-full text-sm"
-                >
-                  {cat.name}
-                </span>
-              ))}
-              {genres.map((genre: any) => (
-                <span
-                  key={genre.name}
-                  className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm"
-                >
-                  {genre.name}
-                </span>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-              <div>
-                <p className="text-gray-600 text-sm">公開日</p>
-                <p className="font-bold">{publishDate}</p>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm">閲覧数</p>
-                <p className="font-bold">{views.toLocaleString()}</p>
-              </div>
-              {sales > 0 && (
-                <div>
-                  <p className="text-gray-600 text-sm">売上</p>
-                  <p className="font-bold">{sales.toLocaleString()}</p>
+          {/* コンテンツ詳細 */}
+          <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <div className="flex flex-col md:flex-row gap-8">
+              {/* サムネイル */}
+              {thumbnail && (
+                <div className="flex-shrink-0">
+                  <img
+                    src={thumbnail}
+                    alt={title}
+                    className="w-full md:w-80 h-auto object-cover rounded-lg shadow-md"
+                  />
                 </div>
               )}
-              {maker && (
-                <div>
-                  <p className="text-gray-600 text-sm">メーカー</p>
-                  <p className="font-bold">{maker}</p>
+
+              {/* コンテンツ情報 */}
+              <div className="flex-1">
+                <h1 className="text-4xl font-bold mb-4 text-black">{title}</h1>
+
+                {/* カテゴリタグ */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {categories.map((cat: any) => (
+                    <span
+                      key={cat.name}
+                      className="px-3 py-1 bg-pink-100 text-pink-600 rounded-full text-sm font-semibold"
+                    >
+                      {cat.name}
+                    </span>
+                  ))}
                 </div>
-              )}
+
+                {/* メタ情報 */}
+                <div className="space-y-2 mb-6 text-gray-700">
+                  {releaseDate && (
+                    <p><span className="font-semibold">公開日:</span> {releaseDate}</p>
+                  )}
+                  {genre && (
+                    <p><span className="font-semibold">ジャンル:</span> {genre}</p>
+                  )}
+                  {maker && (
+                    <p><span className="font-semibold">メーカー:</span> {maker}</p>
+                  )}
+                  <p><span className="font-semibold">閲覧数:</span> {views.toLocaleString()} views</p>
+                  {sales > 0 && (
+                    <p><span className="font-semibold">売上:</span> ¥{sales.toLocaleString()}</p>
+                  )}
+                </div>
+
+                {/* 説明文 */}
+                {description && (
+                  <p className="text-gray-700 leading-relaxed mb-6 whitespace-pre-wrap">
+                    {description}
+                  </p>
+                )}
+
+                {/* アフィリエイトリンク */}
+                {affiliateUrl && (
+                  <a
+                    href={affiliateUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-8 py-3 bg-pink-500 text-white font-bold rounded-lg hover:bg-pink-600 transition shadow-md"
+                  >
+                    🛒 DMMで詳細を見る
+                  </a>
+                )}
+              </div>
             </div>
-
-            {description && (
-              <div className="mb-6">
-                <h2 className="text-xl font-bold mb-2">説明</h2>
-                <p className="text-gray-700 leading-relaxed">{description}</p>
-              </div>
-            )}
-
-            {people.length > 0 && (
-              <div className="mb-6">
-                <h2 className="text-xl font-bold mb-4">出演者</h2>
-                <div className="flex flex-wrap gap-4">
-                  {people.map((person: any) => {
-                    const personId = person.id;
-                    const name = person.properties['人名']?.title[0]?.plain_text || '名前なし';
-                    const profileImage = person.properties['プロフィール画像']?.files[0]?.file?.url || person.properties['プロフィール画像']?.files[0]?.external?.url || '';
-
-                    return (
-                      <Link
-                        key={personId}
-                        href={`/person/${personId}`}
-                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        {profileImage && (
-                          <img
-                            src={profileImage}
-                            alt={name}
-                            className="w-12 h-12 rounded-full object-cover"
-                          />
-                        )}
-                        <span className="font-medium">{name}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {affiliateUrl && (
-              <a
-                href={affiliateUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full bg-pink-600 text-white text-center py-3 rounded-lg font-bold hover:bg-pink-700 transition-colors"
-              >
-                詳細を見る →
-              </a>
-            )}
           </div>
+
+          {/* 出演者一覧 */}
+          {people.length > 0 && (
+            <section className="mb-8">
+              <h2 className="text-3xl font-bold mb-6 text-black">出演者</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                {people.map((person: any) => {
+                  const personId = person.id;
+                  const name = person.properties['人名']?.title[0]?.plain_text || '名前なし';
+                  const profileImage = person.properties['プロフィール画像']?.files[0]?.file?.url || person.properties['プロフィール画像']?.files[0]?.external?.url || '';
+
+                  return (
+                    <Link
+                      key={personId}
+                      href={`/person/${personId}`}
+                      className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4"
+                    >
+                      {profileImage && (
+                        <img
+                          src={profileImage}
+                          alt={name}
+                          className="w-full h-48 object-cover rounded-lg mb-3"
+                        />
+                      )}
+                      <h3 className="font-bold text-center text-black">{name}</h3>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+          )}
         </div>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 }

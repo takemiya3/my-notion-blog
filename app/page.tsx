@@ -191,7 +191,8 @@ export default function Home() {
       <Header />
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4">
-<h1 className="text-4xl font-bold text-center mb-8 text-gray-900">放課後制服動画ナビ</h1>
+          <h1 className="text-4xl font-bold text-center mb-8 text-black">放課後制服動画ナビ</h1>
+
           {/* 検索バー */}
           <div className="max-w-2xl mx-auto mb-8">
             <div className="relative">
@@ -200,22 +201,23 @@ export default function Home() {
                 value={searchQuery}
                 onChange={handleSearchChange}
                 placeholder="人物名やコンテンツを検索..."
-                className="w-full px-6 py-4 text-lg rounded-full border-2 border-gray-300 focus:border-pink-500 focus:outline-none shadow-md pl-12"
+                className="w-full px-6 py-4 text-lg rounded-full border-2 border-gray-300 focus:border-pink-500 focus:outline-none shadow-md pl-12 text-black placeholder-gray-400"
+                style= color: 'black' 
               />
               {searchQuery && (
                 <button
                   onClick={clearSearch}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-black hover:text-gray-700 text-xl"
                 >
                   ✕
                 </button>
               )}
-              <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl">
+              <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-black text-xl">
                 🔍
               </div>
             </div>
             {searchQuery && (
-              <p className="text-center text-gray-600 mt-2">
+              <p className="text-center text-black mt-2">
                 「{searchQuery}」の検索結果
               </p>
             )}
@@ -241,23 +243,24 @@ export default function Home() {
           {/* 人物一覧 */}
           <section className="mb-12">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">
+              <h2 className="text-2xl font-bold text-black">
                 人物一覧 ({filteredPeople.length}件)
               </h2>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">並び替え:</span>
+                <span className="text-sm text-black">並び替え:</span>
                 <select
                   value={peopleSort}
                   onChange={(e) => setPeopleSort(e.target.value as SortOption)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500"
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500 text-black bg-white"
+                  style= color: 'black' 
                 >
-                  <option value="name">名前順</option>
-                  <option value="newest">生年月日（新しい順）</option>
+                  <option value="name" style= color: 'black' >名前順</option>
+                  <option value="newest" style= color: 'black' >生年月日（新しい順）</option>
                 </select>
               </div>
             </div>
             {filteredPeople.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">該当する人物が見つかりませんでした</p>
+              <p className="text-black text-center py-8">該当する人物が見つかりませんでした</p>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 {filteredPeople.map((person: Person) => {
@@ -279,7 +282,8 @@ export default function Home() {
                           className="w-full h-48 object-cover rounded-lg mb-3"
                         />
                       )}
-<h3 className="font-bold text-lg mb-2 text-gray-900">{name}</h3>                      <div className="flex flex-wrap gap-1">
+                      <h3 className="font-bold text-lg mb-2 text-black">{name}</h3>
+                      <div className="flex flex-wrap gap-1">
                         {personCategories.map((cat: any) => (
                           <span
                             key={cat.name}
@@ -299,25 +303,26 @@ export default function Home() {
           {/* コンテンツ一覧 */}
           <section>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">
+              <h2 className="text-2xl font-bold text-black">
                 最新コンテンツ ({filteredContents.length}件)
               </h2>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">並び替え:</span>
+                <span className="text-sm text-black">並び替え:</span>
                 <select
                   value={contentSort}
                   onChange={(e) => setContentSort(e.target.value as SortOption)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500"
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500 text-black bg-white"
+                  style= color: 'black' 
                 >
-                  <option value="newest">新着順</option>
-                  <option value="popular">人気順（閲覧数）</option>
-                  <option value="sales">売上順</option>
-                  <option value="name">タイトル順</option>
+                  <option value="newest" style= color: 'black' >新着順</option>
+                  <option value="popular" style= color: 'black' >人気順（閲覧数）</option>
+                  <option value="sales" style= color: 'black' >売上順</option>
+                  <option value="name" style= color: 'black' >タイトル順</option>
                 </select>
               </div>
             </div>
             {filteredContents.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">該当するコンテンツが見つかりませんでした</p>
+              <p className="text-black text-center py-8">該当するコンテンツが見つかりませんでした</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {filteredContents.map((content: Content) => {
@@ -340,7 +345,8 @@ export default function Home() {
                         />
                       )}
                       <div className="p-4">
-<h3 className="font-bold text-lg mb-2 line-clamp-2 text-gray-900">{title}</h3>                        <p className="text-gray-600 text-sm">👁 {views.toLocaleString()} views</p>
+                        <h3 className="font-bold text-lg mb-2 line-clamp-2 text-black">{title}</h3>
+                        <p className="text-black text-sm">👁 {views.toLocaleString()} views</p>
                       </div>
                     </Link>
                   );

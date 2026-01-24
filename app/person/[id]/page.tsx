@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import ReviewSection from '@/components/ReviewSection';
 import { Client } from '@notionhq/client';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
@@ -165,7 +166,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
           </div>
 
           {/* 出演コンテンツ一覧 */}
-          <section>
+          <section className="mb-12">
             <h2 className="text-3xl font-bold mb-6 text-black">
               出演コンテンツ ({contents.length}件)
             </h2>
@@ -214,6 +215,9 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
               </div>
             )}
           </section>
+
+          {/* 口コミセクション */}
+          <ReviewSection pageId={resolvedParams.id} pageType="人物" />
         </div>
       </div>
       <Footer />

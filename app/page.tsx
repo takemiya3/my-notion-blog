@@ -8,11 +8,13 @@ import Loading from '@/components/Loading';
 
 type Person = any;
 type Content = any;
+type Genre = any;
 type SortOption = 'newest' | 'popular' | 'sales' | 'name';
 
 export default function Home() {
   const [people, setPeople] = useState<Person[]>([]);
   const [contents, setContents] = useState<Content[]>([]);
+  const [genres, setGenres] = useState<Genre[]>([]);
   const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
   const [filteredContents, setFilteredContents] = useState<Content[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('全て');
@@ -23,30 +25,23 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   const categories = ['全て', '女優', 'モデル', 'グラビア', 'アイドル', 'タレント'];
-  
-  // ジャンル一覧（イメージ画像付き）
-  const genres = [
-    { name: '全て', image: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400' },
-    { name: '制服', image: 'https://images.unsplash.com/photo-1509319117420-cae4c3d1e7fb?w=400' },
-    { name: 'セーラー服', image: 'https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=400' },
-    { name: 'ブレザー', image: 'https://images.unsplash.com/photo-1529108190281-9a4f620bc2d8?w=400' },
-    { name: '体操服', image: 'https://images.unsplash.com/photo-1461897104016-0b3b00cc81ee?w=400' },
-    { name: 'スクール水着', image: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=400' },
-  ];
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [peopleRes, contentsRes] = await Promise.all([
+        const [peopleRes, contentsRes, genresRes] = await Promise.all([
           fetch('/api/people'),
           fetch('/api/contents'),
+          fetch('/api/genres'),
         ]);
 
         const peopleData = await peopleRes.json();
         const contentsData = await contentsRes.json();
+        const genresData = await genresRes.json();
 
         setPeople(peopleData);
         setContents(contentsData);
+        setGenres(genresData);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -57,7 +52,6 @@ export default function Home() {
     fetchData();
   }, []);
 
-  // カテゴリ、ジャンル、検索、ソートでフィルタリング
   useEffect(() => {
     filterAndSortData(selectedCategory, selectedGenre, searchQuery, peopleSort, contentSort);
   }, [selectedCategory, selectedGenre, searchQuery, peopleSort, contentSort, people, contents]);
@@ -126,7 +120,6 @@ export default function Home() {
     let filteredP = people;
     let filteredC = contents;
 
-    // カテゴリフィルター
     if (category !== '全て') {
       filteredP = filteredP.filter((person: Person) => {
         const personCategories = person.properties['カテゴリ']?.multi_select || [];
@@ -139,7 +132,6 @@ export default function Home() {
       });
     }
 
-    // ジャンルフィルター
     if (genre !== '全て') {
       filteredC = filteredC.filter((content: Content) => {
         const contentGenre = content.properties['ジャンル']?.select?.name || '';
@@ -147,7 +139,6 @@ export default function Home() {
       });
     }
 
-    // 検索フィルター
     if (query.trim() !== '') {
       const lowerQuery = query.toLowerCase();
 
@@ -166,7 +157,6 @@ export default function Home() {
       });
     }
 
-    // ソート
     filteredP = sortPeople(filteredP, peopleSortOption);
     filteredC = sortContents(filteredC, contentSortOption);
 
@@ -267,23 +257,46 @@ export default function Home() {
           <section className="mb-12">
             <h2 className="text-3xl font-bold text-center mb-6 text-black">ジャンルから探す</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {genres.map((genre) => {
-                const isSelected = selectedGenre === genre.name;
+              {/* 「全て」ボタン */}
+              <button
+                onClick={() => handleGenreClick('全て')}
+                className={`relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all ${
+                  selectedGenre === '全て' ? 'ring-4 ring-pink-500 scale-105' : ''
+                }`}
+              >
+                <div className="w-full h-32 bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center">
+                  <span className="text-white font-bold text-2xl">全て</span>
+                </div>
+              </button>
+
+              {/* Notionから取得したジャンル */}
+              {genres.map((genre: any) => {
+                const genreName = genre.properties['ジャンル名']?.title[0]?.plain_text || '';
+                const genreImage = genre.properties['イメージ画像']?.files[0]?.file?.url || 
+                                  genre.properties['イメージ画像']?.files[0]?.external?.url || '';
+                const isSelected = selectedGenre === genreName;
+
                 return (
                   <button
-                    key={genre.name}
-                    onClick={() => handleGenreClick(genre.name)}
+                    key={genre.id}
+                    onClick={() => handleGenreClick(genreName)}
                     className={`relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all ${
                       isSelected ? 'ring-4 ring-pink-500 scale-105' : ''
                     }`}
                   >
-                    <img
-                      src={genre.image}
-                      alt={genre.name}
-                      className="w-full h-32 object-cover"
-                    />
+                    {genreImage ? (
+                      <img
+                        src={genreImage}
+                        alt={genreName}
+                        className="w-full h-32 object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-32 bg-gray-300 flex items-center justify-center">
+                        <span className="text-gray-600">画像なし</span>
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end justify-center pb-3">
-                      <span className="text-white font-bold text-lg">{genre.name}</span>
+                      <span className="text-white font-bold text-lg">{genreName}</span>
                     </div>
                   </button>
                 );

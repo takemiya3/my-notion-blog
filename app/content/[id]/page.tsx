@@ -30,8 +30,9 @@ async function getRelatedPeople(personIds: string[]) {
   }
 }
 
-export default async function ContentPage({ params }: { params: { id: string } }) {
-  const content = await getContentData(params.id);
+export default async function ContentPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const content = await getContentData(resolvedParams.id);
 
   if (!content) {
     notFound();
@@ -46,7 +47,7 @@ export default async function ContentPage({ params }: { params: { id: string } }
   const views = properties['閲覧数']?.number || 0;
   const sales = properties['売上']?.number || 0;
   const genre = properties['ジャンル']?.select?.name || '';
-  const maker = properties['メーカー']?.rich_text[0]?.plain_text || '';
+  const maker = properties['メーカー']?.rich_text?.[0]?.plain_text || '';
   const affiliateUrl = properties['アフィリエイトURL']?.url || '';
   const categories = properties['カテゴリ']?.multi_select || [];
   const personRelations = properties['出演者']?.relation || [];

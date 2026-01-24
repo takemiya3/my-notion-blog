@@ -24,6 +24,6 @@ export async function GET() {
     return NextResponse.json(response.results);
   } catch (error) {
     console.error('Error fetching genres:', error);
-    return NextResponse.json({ error: 'Failed to fetch genres' }, { status: 500 });
+    return NextResponse.json([], { status: 200 }); // エラー時は空配列を返す
   }
 }

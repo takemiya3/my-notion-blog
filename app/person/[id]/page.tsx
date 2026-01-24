@@ -40,14 +40,15 @@ async function getPersonContents(personId: string) {
   }
 }
 
-export default async function PersonPage({ params }: { params: { id: string } }) {
-  const person = await getPersonData(params.id);
+export default async function PersonPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const person = await getPersonData(resolvedParams.id);
 
   if (!person) {
     notFound();
   }
 
-  const contents = await getPersonContents(params.id);
+  const contents = await getPersonContents(resolvedParams.id);
 
   // @ts-ignore
   const properties = person.properties;

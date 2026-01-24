@@ -121,16 +121,16 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
                 )}
 
                 {/* アフィリエイトリンク */}
-                {affiliateUrl && (
-                  <a
-                    href={affiliateUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block px-8 py-3 bg-pink-500 text-white font-bold rounded-lg hover:bg-pink-600 transition shadow-md"
-                  >
-                     FANZAで詳細を見る
-                  </a>
-                )}
+{affiliateUrl && (
+  <a
+    href={affiliateUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="inline-block px-8 py-3 bg-pink-500 text-white font-bold rounded-lg hover:bg-pink-600 transition shadow-md"
+  >
+    🛒 FANZAで詳細を見る
+  </a>
+)}
               </div>
             </div>
           </div>

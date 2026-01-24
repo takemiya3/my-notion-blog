@@ -42,7 +42,7 @@ async function getPersonContents(personId: string) {
 
 export default async function PersonPage({ params }: { params: { id: string } }) {
   const person = await getPersonData(params.id);
-  
+
   if (!person) {
     notFound();
   }

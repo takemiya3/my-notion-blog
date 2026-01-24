@@ -202,7 +202,6 @@ export default function Home() {
                 onChange={handleSearchChange}
                 placeholder="人物名やコンテンツを検索..."
                 className="w-full px-6 py-4 text-lg rounded-full border-2 border-gray-300 focus:border-pink-500 focus:outline-none shadow-md pl-12 text-black placeholder-gray-400"
-                style= color: 'black' 
               />
               {searchQuery && (
                 <button
@@ -252,10 +251,9 @@ export default function Home() {
                   value={peopleSort}
                   onChange={(e) => setPeopleSort(e.target.value as SortOption)}
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500 text-black bg-white"
-                  style= color: 'black' 
                 >
-                  <option value="name" style= color: 'black' >名前順</option>
-                  <option value="newest" style= color: 'black' >生年月日（新しい順）</option>
+                  <option value="name">名前順</option>
+                  <option value="newest">生年月日（新しい順）</option>
                 </select>
               </div>
             </div>
@@ -312,12 +310,11 @@ export default function Home() {
                   value={contentSort}
                   onChange={(e) => setContentSort(e.target.value as SortOption)}
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500 text-black bg-white"
-                  style= color: 'black' 
                 >
-                  <option value="newest" style= color: 'black' >新着順</option>
-                  <option value="popular" style= color: 'black' >人気順（閲覧数）</option>
-                  <option value="sales" style= color: 'black' >売上順</option>
-                  <option value="name" style= color: 'black' >タイトル順</option>
+                  <option value="newest">新着順</option>
+                  <option value="popular">人気順（閲覧数）</option>
+                  <option value="sales">売上順</option>
+                  <option value="name">タイトル順</option>
                 </select>
               </div>
             </div>

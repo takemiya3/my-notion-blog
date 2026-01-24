@@ -6,6 +6,9 @@ import { Client } from '@notionhq/client';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
+// 🔥 追加：60秒ごとにキャッシュを更新（ISR）
+export const revalidate = 60;
+
 async function getPersonData(personId: string) {
   try {
     const person = await notion.pages.retrieve({ page_id: personId });
@@ -56,10 +59,10 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   const profileImage = properties['プロフィール画像']?.files[0]?.file?.url || properties['プロフィール画像']?.files[0]?.external?.url || '';
   const birthDate = properties['生年月日']?.date?.start || '';
   const description = properties['説明文']?.rich_text[0]?.plain_text || '';
-  
-  // FANZAリンクを取得（修正箇所）
+
+  // FANZAリンクを取得
   const fanzaLink = properties['FANZAリンク']?.url || null;
-  
+
   const categories = properties['カテゴリ']?.multi_select || [];
   const twitterUrl = properties['TwitterURL']?.url || '';
   const instagramUrl = properties['InstagramURL']?.url || '';

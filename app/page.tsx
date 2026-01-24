@@ -16,12 +16,23 @@ export default function Home() {
   const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
   const [filteredContents, setFilteredContents] = useState<Content[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('全て');
+  const [selectedGenre, setSelectedGenre] = useState<string>('全て');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [contentSort, setContentSort] = useState<SortOption>('newest');
   const [peopleSort, setPeopleSort] = useState<SortOption>('name');
   const [loading, setLoading] = useState(true);
 
   const categories = ['全て', '女優', 'モデル', 'グラビア', 'アイドル', 'タレント'];
+  
+  // ジャンル一覧（イメージ画像付き）
+  const genres = [
+    { name: '全て', image: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400' },
+    { name: '制服', image: 'https://images.unsplash.com/photo-1509319117420-cae4c3d1e7fb?w=400' },
+    { name: 'セーラー服', image: 'https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=400' },
+    { name: 'ブレザー', image: 'https://images.unsplash.com/photo-1529108190281-9a4f620bc2d8?w=400' },
+    { name: '体操服', image: 'https://images.unsplash.com/photo-1461897104016-0b3b00cc81ee?w=400' },
+    { name: 'スクール水着', image: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=400' },
+  ];
 
   useEffect(() => {
     async function fetchData() {
@@ -46,10 +57,10 @@ export default function Home() {
     fetchData();
   }, []);
 
-  // カテゴリ、検索、ソートでフィルタリング
+  // カテゴリ、ジャンル、検索、ソートでフィルタリング
   useEffect(() => {
-    filterAndSortData(selectedCategory, searchQuery, peopleSort, contentSort);
-  }, [selectedCategory, searchQuery, peopleSort, contentSort, people, contents]);
+    filterAndSortData(selectedCategory, selectedGenre, searchQuery, peopleSort, contentSort);
+  }, [selectedCategory, selectedGenre, searchQuery, peopleSort, contentSort, people, contents]);
 
   const sortPeople = (peopleList: Person[], sortOption: SortOption): Person[] => {
     const sorted = [...peopleList];
@@ -107,6 +118,7 @@ export default function Home() {
 
   const filterAndSortData = (
     category: string,
+    genre: string,
     query: string,
     peopleSortOption: SortOption,
     contentSortOption: SortOption
@@ -124,6 +136,14 @@ export default function Home() {
       filteredC = filteredC.filter((content: Content) => {
         const contentCategories = content.properties['カテゴリ']?.multi_select || [];
         return contentCategories.some((cat: any) => cat.name === category);
+      });
+    }
+
+    // ジャンルフィルター
+    if (genre !== '全て') {
+      filteredC = filteredC.filter((content: Content) => {
+        const contentGenre = content.properties['ジャンル']?.select?.name || '';
+        return contentGenre === genre;
       });
     }
 
@@ -156,6 +176,10 @@ export default function Home() {
 
   const handleCategoryClick = (category: string) => {
     setSelectedCategory(category);
+  };
+
+  const handleGenreClick = (genre: string) => {
+    setSelectedGenre(genre);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -238,6 +262,39 @@ export default function Home() {
               );
             })}
           </div>
+
+          {/* ジャンル別検索（画像付き） */}
+          <section className="mb-12">
+            <h2 className="text-3xl font-bold text-center mb-6 text-black">ジャンルから探す</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {genres.map((genre) => {
+                const isSelected = selectedGenre === genre.name;
+                return (
+                  <button
+                    key={genre.name}
+                    onClick={() => handleGenreClick(genre.name)}
+                    className={`relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all ${
+                      isSelected ? 'ring-4 ring-pink-500 scale-105' : ''
+                    }`}
+                  >
+                    <img
+                      src={genre.image}
+                      alt={genre.name}
+                      className="w-full h-32 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end justify-center pb-3">
+                      <span className="text-white font-bold text-lg">{genre.name}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {selectedGenre !== '全て' && (
+              <p className="text-center text-black mt-4">
+                ジャンル「{selectedGenre}」で絞り込み中
+              </p>
+            )}
+          </section>
 
           {/* 人物一覧 */}
           <section className="mb-12">

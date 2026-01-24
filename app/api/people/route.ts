@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getPeople } from '@/lib/notion';
 
+export const revalidate = 60;
+
 export async function GET() {
   try {
     const people = await getPeople();

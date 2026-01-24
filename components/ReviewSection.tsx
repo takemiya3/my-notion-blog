@@ -101,7 +101,7 @@ export default function ReviewSection({ pageId, pageType }: ReviewSectionProps) 
           </h2>
           {reviews.length > 0 && (
             <p className="text-lg text-gray-600 mt-1">
-              平均評価: <span className="text-yellow-500 font-bold">{renderStars('5 Stars'.replace('5', calculateAverageRating()))}</span>
+              平均評価: <span className="text-yellow-500 font-bold">{renderStars(`${Math.round(parseFloat(calculateAverageRating()))} Stars`)}</span>
               <span className="ml-2">({calculateAverageRating()})</span>
             </p>
           )}

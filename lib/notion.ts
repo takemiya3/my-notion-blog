@@ -16,7 +16,7 @@ const notion = new Client({
 
 export async function getPeople() {
   const response = await notion.databases.query({
-    database_id: process.env.NOTION_PERSON_DB_ID,
+    database_id: process.env.NOTION_PERSON_DB_ID!,  // ← ! を追加
     filter: {
       property: '公開ステータス',
       checkbox: {
@@ -29,7 +29,7 @@ export async function getPeople() {
 
 export async function getContents() {
   const response = await notion.databases.query({
-    database_id: process.env.NOTION_CONTENT_DB_ID,
+    database_id: process.env.NOTION_CONTENT_DB_ID!,  // ← ! を追加
     filter: {
       property: '公開ステータス',
       checkbox: {
@@ -48,7 +48,7 @@ export async function getContents() {
 
 export async function getPeopleByCategory(category: string) {
   const response = await notion.databases.query({
-    database_id: process.env.NOTION_PERSON_DB_ID,
+    database_id: process.env.NOTION_PERSON_DB_ID!,  // ← ! を追加
     filter: {
       and: [
         {
@@ -71,7 +71,7 @@ export async function getPeopleByCategory(category: string) {
 
 export async function getContentsByCategory(category: string) {
   const response = await notion.databases.query({
-    database_id: process.env.NOTION_CONTENT_DB_ID,
+    database_id: process.env.NOTION_CONTENT_DB_ID!,  // ← ! を追加
     filter: {
       and: [
         {

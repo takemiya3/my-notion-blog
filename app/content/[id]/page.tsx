@@ -128,7 +128,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
                     rel="noopener noreferrer"
                     className="inline-block px-8 py-3 bg-pink-500 text-white font-bold rounded-lg hover:bg-pink-600 transition shadow-md"
                   >
-                    🛒 DMMで詳細を見る
+                     FANZAで詳細を見る
                   </a>
                 )}
               </div>
@@ -144,22 +144,33 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
                   const personId = person.id;
                   const name = person.properties['人名']?.title[0]?.plain_text || '名前なし';
                   const profileImage = person.properties['プロフィール画像']?.files[0]?.file?.url || person.properties['プロフィール画像']?.files[0]?.external?.url || '';
+                  const fanzaLink = person.properties['FANZAリンク']?.url || null;
 
                   return (
-                    <Link
-                      key={personId}
-                      href={`/person/${personId}`}
-                      className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4"
-                    >
-                      {profileImage && (
-                        <img
-                          src={profileImage}
-                          alt={name}
-                          className="w-full h-48 object-cover rounded-lg mb-3"
-                        />
+                    <div key={personId} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4">
+                      <Link href={`/person/${personId}`}>
+                        {profileImage && (
+                          <img
+                            src={profileImage}
+                            alt={name}
+                            className="w-full h-48 object-cover rounded-lg mb-3"
+                          />
+                        )}
+                        <h3 className="font-bold text-center text-black mb-3">{name}</h3>
+                      </Link>
+                      
+                      {/* FANZAリンクボタン */}
+                      {fanzaLink && (
+                        <a
+                          href={fanzaLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-center bg-red-600 hover:bg-red-700 text-white text-sm font-bold py-2 px-3 rounded-lg transition-colors duration-200"
+                        >
+                          動画を見る
+                        </a>
                       )}
-                      <h3 className="font-bold text-center text-black">{name}</h3>
-                    </Link>
+                    </div>
                   );
                 })}
               </div>

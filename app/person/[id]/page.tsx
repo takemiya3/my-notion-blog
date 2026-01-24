@@ -56,6 +56,10 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   const profileImage = properties['プロフィール画像']?.files[0]?.file?.url || properties['プロフィール画像']?.files[0]?.external?.url || '';
   const birthDate = properties['生年月日']?.date?.start || '';
   const description = properties['説明文']?.rich_text[0]?.plain_text || '';
+  
+  // FANZAリンクを取得（修正箇所）
+  const fanzaLink = properties['FANZAリンク']?.url || null;
+  
   const categories = properties['カテゴリ']?.multi_select || [];
   const twitterUrl = properties['TwitterURL']?.url || '';
   const instagramUrl = properties['InstagramURL']?.url || '';
@@ -116,9 +120,23 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
                   </p>
                 )}
 
+                {/* FANZAリンクボタン */}
+                {fanzaLink && (
+                  <div className="mt-6">
+                    <a
+                      href={fanzaLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200"
+                    >
+                      動画はこちらから
+                    </a>
+                  </div>
+                )}
+
                 {/* SNSリンク */}
                 {(twitterUrl || instagramUrl) && (
-                  <div className="flex gap-4">
+                  <div className="flex gap-4 mt-4">
                     {twitterUrl && (
                       <a
                         href={twitterUrl}
@@ -150,7 +168,6 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
             <h2 className="text-3xl font-bold mb-6 text-black">
               出演コンテンツ ({contents.length}件)
             </h2>
-
             {contents.length === 0 ? (
               <p className="text-center text-gray-600 py-12">
                 まだコンテンツがありません

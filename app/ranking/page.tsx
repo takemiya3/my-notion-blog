@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Client } from '@notionhq/client';
@@ -51,18 +50,17 @@ export default async function RankingPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {rankings.map((ranking: any) => {
-  const rankingId = ranking.id;
-  const props = (ranking as any).properties;
-  const title = props['記事タイトル']?.title?.[0]?.plain_text || '無題';
-  const slug = props['スラッグ']?.rich_text?.[0]?.plain_text || '';  // ← text に変更
-                const theme = ranking.properties['テーマ']?.select?.name || '';
-                const thumbnail = ranking.properties['サムネイル']?.files[0]?.file?.url || 
-                                 ranking.properties['サムネイル']?.files[0]?.external?.url || '';
-                const description = ranking.properties['メタディスクリプション']?.rich_text?.[0]?.plain_text || '';
+                const props = ranking.properties;
+                const title = props['記事タイトル']?.title?.[0]?.plain_text || '無題';
+                const slug = props['スラッグ']?.rich_text?.[0]?.plain_text || '';
+                const theme = props['テーマ']?.select?.name || '';
+                const thumbnail = props['サムネイル']?.files?.[0]?.file?.url || 
+                                 props['サムネイル']?.files?.[0]?.external?.url || '';
+                const description = props['メタディスクリプション']?.rich_text?.[0]?.plain_text || '';
 
                 return (
                   <Link
-                    key={rankingId}
+                    key={ranking.id}
                     href={`/ranking/${slug}`}
                     className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all overflow-hidden group"
                   >

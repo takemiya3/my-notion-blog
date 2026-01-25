@@ -48,7 +48,6 @@ async function getPeopleByTags(tags: string[], categories: string[], sortBy: str
       },
     ];
 
-    // タグまたはカテゴリで絞り込み（OR条件）
     if (tags && tags.length > 0) {
       const tagFilters = tags.map(tag => ({
         property: 'カテゴリ',
@@ -163,13 +162,9 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
   const sortBy = props['並び順']?.select?.name || '閲覧数';
   const limit = props['表示件数']?.number || 10;
 
-  // タグに基づいて人物を自動取得
   const people = await getPeopleByTags(tags, categories, sortBy, limit);
-
-  // ランキング詳細（個別紹介文）を取得
   const rankingDetails = await getRankingDetails(article.id);
 
-  // 紹介文のマップを作成（person.id をキーにする）
   const detailsMap = new Map<string, string>();
   rankingDetails.forEach((detail: any) => {
     const detailProps = detail.properties;
@@ -186,12 +181,10 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
       <Header />
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-4xl mx-auto px-4">
-          {/* タイトル */}
           <h1 className="text-4xl font-bold text-center mb-8 text-black">
             {title}
           </h1>
 
-          {/* 導入文 */}
           {introduction && (
             <div className="bg-white rounded-xl shadow-md p-6 mb-12">
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
@@ -200,7 +193,6 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
             </div>
           )}
 
-          {/* ランキング */}
           <div className="space-y-8 mb-12">
             {people.map((person: any, index: number) => {
               const personId = person.id;
@@ -215,7 +207,6 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
               return (
                 <div key={personId} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow">
                   <div className="flex flex-col md:flex-row">
-                    {/* 画像 */}
                     {profileImage && (
                       <div className="md:w-2/5">
                         <img
@@ -226,9 +217,7 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
                       </div>
                     )}
 
-                    {/* コンテンツ */}
                     <div className="flex-1 p-6">
-                      {/* 順位と名前 */}
                       <div className="flex items-center gap-4 mb-4">
                         <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-3xl w-16 h-16 rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
                           {index + 1}
@@ -236,7 +225,6 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
                         <h3 className="text-2xl font-bold text-black">{name}</h3>
                       </div>
 
-                      {/* タグ */}
                       <div className="flex flex-wrap gap-2 mb-4">
                         {personTags.map((tag: any) => (
                           <span
@@ -248,14 +236,12 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
                         ))}
                       </div>
 
-                      {/* 紹介文 */}
                       {description && (
                         <div className="text-gray-700 mb-6 leading-relaxed whitespace-pre-wrap">
                           {description}
                         </div>
                       )}
 
-                      {/* ボタン */}
                       <div className="flex flex-col sm:flex-row gap-3">
                         {fanzaLink && (
                           <a
@@ -281,7 +267,6 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
             })}
           </div>
 
-          {/* まとめ文 */}
           {conclusion && (
             <div className="bg-white rounded-xl shadow-md p-6">
               <h2 className="text-2xl font-bold mb-4 text-black">まとめ</h2>

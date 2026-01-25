@@ -14,14 +14,14 @@ export default function Home() {
   const [people, setPeople] = useState<Person[]>([]);
   const [contents, setContents] = useState<Content[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
-  
+
   const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
   const [filteredContents, setFilteredContents] = useState<Content[]>([]);
-  
+
   const [selectedCategory, setSelectedCategory] = useState<string>('全て');
   const [selectedGenre, setSelectedGenre] = useState<string>('全て');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  
+
   const [contentSort, setContentSort] = useState<SortOption>('newest');
   const [peopleSort, setPeopleSort] = useState<SortOption>('name');
   const [loading, setLoading] = useState(true);
@@ -159,13 +159,13 @@ export default function Home() {
         const name = person.properties['人名']?.title[0]?.plain_text || '';
         const description = person.properties['説明文']?.rich_text?.[0]?.plain_text || '';
         return name.toLowerCase().includes(lowerQuery) ||
-               description.toLowerCase().includes(lowerQuery);
+          description.toLowerCase().includes(lowerQuery);
       });
       filteredC = filteredC.filter((content: Content) => {
         const title = content.properties['タイトル']?.title[0]?.plain_text || '';
         const description = content.properties['説明文']?.rich_text?.[0]?.plain_text || '';
         return title.toLowerCase().includes(lowerQuery) ||
-               description.toLowerCase().includes(lowerQuery);
+          description.toLowerCase().includes(lowerQuery);
       });
     }
 
@@ -182,6 +182,13 @@ export default function Home() {
 
   const handleGenreClick = (genre: string) => {
     setSelectedGenre(genre);
+    // ジャンルをクリックしたら人物一覧までスクロール
+    setTimeout(() => {
+      document.getElementById('people')?.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }, 100);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -291,7 +298,7 @@ export default function Home() {
               {genres.map((genre: any) => {
                 const genreName = genre.properties['ジャンル名']?.title[0]?.plain_text || '';
                 const genreImage = genre.properties['イメージ画像']?.files[0]?.file?.url ||
-                                   genre.properties['イメージ画像']?.files[0]?.external?.url || '';
+                  genre.properties['イメージ画像']?.files[0]?.external?.url || '';
                 const isSelected = selectedGenre === genreName;
 
                 return (
@@ -328,7 +335,7 @@ export default function Home() {
           </section>
 
           {/* 人物一覧 */}
-          <section className="mb-12">
+          <section id="people" className="mb-12 scroll-mt-24">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-black">
                 人物一覧 ({filteredPeople.length}件)
@@ -378,7 +385,7 @@ export default function Home() {
                           ))}
                         </div>
                       </Link>
-                      
+
                       {/* FANZAリンクボタン */}
                       {fanzaLink && (
                         <a

@@ -1,9 +1,11 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ReviewSection from '@/components/ReviewSection';
 import { Client } from '@notionhq/client';
+import type { Metadata } from 'next';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
@@ -43,6 +45,60 @@ async function getPersonContents(personId: string) {
   }
 }
 
+// メタデータ生成関数
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const resolvedParams = await params;
+  const person = await getPersonData(resolvedParams.id);
+  
+  if (!person) {
+    return {
+      title: '人物が見つかりません',
+      description: 'お探しの人物ページは見つかりませんでした。',
+    };
+  }
+
+  // @ts-ignore
+  const properties = person.properties;
+  const name = properties['人名']?.title[0]?.plain_text || '名前なし';
+  const description = properties['説明文']?.rich_text[0]?.plain_text || '';
+  const profileImage = properties['プロフィール画像']?.files[0]?.file?.url || properties['プロフィール画像']?.files[0]?.external?.url || '';
+  const categories = properties['カテゴリ']?.multi_select || [];
+  const birthDate = properties['生年月日']?.date?.start || '';
+
+  // カテゴリを文字列化
+  const categoryNames = categories.map((cat: any) => cat.name).join('、');
+
+  // descriptionを生成（説明文がない場合は自動生成）
+  const metaDescription = description || 
+    `${name}のプロフィール。${categoryNames}として活躍。${birthDate ? `生年月日：${birthDate}。` : ''}出演コンテンツ一覧、口コミ、評価などの詳細情報をご覧いただけます。`;
+
+  return {
+    title: `${name} - プロフィール・出演作品`,
+    description: metaDescription.slice(0, 160), // 160文字以内に制限
+    keywords: [name, ...categoryNames.split('、').filter(Boolean), '出演作品', 'プロフィール', '動画'],
+    openGraph: {
+      title: `${name} - 放課後制服動画ナビ`,
+      description: metaDescription.slice(0, 160),
+      url: `https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app//person/${resolvedParams.id}`,
+      type: 'profile',
+      images: profileImage ? [
+        {
+          url: profileImage,
+          width: 800,
+          height: 600,
+          alt: name,
+        },
+      ] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${name} - 放課後制服動画ナビ`,
+      description: metaDescription.slice(0, 160),
+      images: profileImage ? [profileImage] : [],
+    },
+  };
+}
+
 export default async function PersonPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const person = await getPersonData(resolvedParams.id);
@@ -66,8 +122,55 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   const twitterUrl = properties['TwitterURL']?.url || '';
   const instagramUrl = properties['InstagramURL']?.url || '';
 
+  // 構造化データを生成
+  const personJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: name,
+    image: profileImage,
+    birthDate: birthDate,
+    description: description,
+    jobTitle: categories.map((cat: any) => cat.name).join('、'),
+    url: `https://your-domain.vercel.app/person/${resolvedParams.id}`,
+    sameAs: [
+      twitterUrl,
+      instagramUrl,
+      fanzaLink,
+    ].filter(Boolean), // 空でないURLのみ
+  };
+
+  // パンくずリストの構造化データ
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'ホーム',
+        item: 'https://your-domain.vercel.app',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: name,
+        item: `https://your-domain.vercel.app/person/${resolvedParams.id}`,
+      },
+    ],
+  };
+
   return (
     <>
+      {/* 構造化データを追加 */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML= __html: JSON.stringify(personJsonLd) 
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML= __html: JSON.stringify(breadcrumbJsonLd) 
+      />
+
       <Header />
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-5xl mx-auto px-4">
@@ -84,10 +187,13 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
               {/* プロフィール画像 */}
               {profileImage && (
                 <div className="flex-shrink-0">
-                  <img
+                  <Image
                     src={profileImage}
-                    alt={name}
+                    alt={`${name}のプロフィール画像`}
+                    width={256}
+                    height={320}
                     className="w-64 h-80 object-cover rounded-lg shadow-md"
+                    priority
                   />
                 </div>
               )}
@@ -190,9 +296,11 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
                       className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden"
                     >
                       {thumbnail && (
-                        <img
+                        <Image
                           src={thumbnail}
                           alt={title}
+                          width={300}
+                          height={200}
                           className="w-full h-48 object-cover"
                         />
                       )}

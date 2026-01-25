@@ -13,24 +13,20 @@ async function getRankingArticle(slug: string) {
     const response = await notion.databases.query({
       database_id: process.env.NOTION_RANKING_DB_ID!,
       filter: {
-        and: [
-          {
-            property: 'スラッグ',
-            rich_text: {
-              equals: slug,
-            },
-          },
-          {
-            property: '公開',
-            checkbox: {
-              equals: true,
-            },
-          },
-        ],
+        property: '公開',
+        checkbox: {
+          equals: true,
+        },
       },
     });
 
-    return response.results[0] || null;
+    const article = response.results.find((result: any) => {
+      const props = result.properties;
+      const articleSlug = props['スラッグ']?.rich_text?.[0]?.plain_text || '';
+      return articleSlug === slug;
+    });
+
+    return article || null;
   } catch (error) {
     console.error('Error fetching ranking article:', error);
     throw error;
@@ -164,7 +160,7 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
     const limit = props['表示件数']?.number || 10;
 
     const people = await getPeopleByTags(tags, categories, sortBy, limit);
-    const rankingDetails = await getRankingDetails(article.id);
+    const rankingDetails = await getRankingDetails((article as any).id);
 
     const detailsMap = new Map<string, string>();
     rankingDetails.forEach((detail: any) => {

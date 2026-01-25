@@ -55,7 +55,7 @@ async function getPeopleByTags(tags: string[], categories: string[], sortBy: str
           contains: tag,
         },
       }));
-      
+
       if (categories && categories.length > 0) {
         const categoryFilters = categories.map(category => ({
           property: 'カテゴリ',
@@ -63,7 +63,7 @@ async function getPeopleByTags(tags: string[], categories: string[], sortBy: str
             contains: category,
           },
         }));
-        
+
         filters.push({
           or: [...tagFilters, ...categoryFilters],
         });
@@ -79,7 +79,7 @@ async function getPeopleByTags(tags: string[], categories: string[], sortBy: str
           contains: category,
         },
       }));
-      
+
       filters.push({
         or: categoryFilters,
       });

@@ -139,10 +139,10 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
     notFound();
   }
 
-  // 型アサーション追加
-  const props = article.properties as any;
+  // 型アサーション
+  const props = (article as any).properties;
 
-  const title = props['記事タイトル']?.title[0]?.plain_text || '無題';
+  const title = props['記事タイトル']?.title?.[0]?.plain_text || '無題';
   const introduction = props['導入文']?.rich_text?.[0]?.plain_text || '';
   const conclusion = props['まとめ文']?.rich_text?.[0]?.plain_text || '';
   const tags = props['対象タグ']?.multi_select?.map((t: any) => t.name) || [];
@@ -157,9 +157,9 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
   const rankingDetails = await getRankingDetails(article.id);
 
   // 紹介文のマップを作成
-  const detailsMap = new Map();
+  const detailsMap = new Map<string, string>();
   rankingDetails.forEach((detail: any) => {
-    const detailProps = detail.properties as any;
+    const detailProps = detail.properties;
     const personUrls = detailProps['人物']?.relation || [];
     if (personUrls.length > 0) {
       const personUrl = personUrls[0];
@@ -191,10 +191,10 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
           <div className="space-y-8 mb-12">
             {people.map((person: any, index: number) => {
               const personId = person.id;
-              const personProps = person.properties as any;
-              const name = personProps['人名']?.title[0]?.plain_text || '名前なし';
-              const profileImage = personProps['プロフィール画像']?.files[0]?.file?.url || 
-                                   personProps['プロフィール画像']?.files[0]?.external?.url || '';
+              const personProps = person.properties;
+              const name = personProps['人名']?.title?.[0]?.plain_text || '名前なし';
+              const profileImage = personProps['プロフィール画像']?.files?.[0]?.file?.url || 
+                                   personProps['プロフィール画像']?.files?.[0]?.external?.url || '';
               const personTags = personProps['カテゴリ']?.multi_select || [];
               const fanzaLink = personProps['FANZAリンク']?.url || null;
               const description = detailsMap.get(person.url) || '';

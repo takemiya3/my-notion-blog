@@ -79,7 +79,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     openGraph: {
       title: `${name} - 放課後制服動画ナビ`,
       description: metaDescription.slice(0, 160),
-      url: `{{https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app/person/${resolvedParams.id}}}`,
+      url: `{{https://seifuku-jk.com/person/${resolvedParams.id}}}`,
       type: 'profile',
       images: profileImage ? [
         {
@@ -131,7 +131,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
     birthDate: birthDate,
     description: description,
     jobTitle: categories.map((cat: any) => cat.name).join('、'),
-    url: `{{https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app/person/${resolvedParams.id}}}`,
+    url: `{{https://seifuku-jk.com/person/${resolvedParams.id}}}`,
     sameAs: [
       twitterUrl,
       instagramUrl,
@@ -148,13 +148,13 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
         '@type': 'ListItem',
         position: 1,
         name: 'ホーム',
-        item: 'https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app',
+        item: 'https://seifuku-jk.com',
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: name,
-        item: `{{https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app/person/${resolvedParams.id}}}`,
+        item: `{{https://seifuku-jk.com/person/${resolvedParams.id}}}`,
       },
     ],
   };

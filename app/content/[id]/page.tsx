@@ -82,7 +82,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     openGraph: {
       title: `${title} - 放課後制服動画ナビ`,
       description: metaDescription.slice(0, 160),
-      url: `{{https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app/content/${resolvedParams.id}}}`,
+      url: `{{https://seifuku-jk.com/content/${resolvedParams.id}}}`,
       type: 'video.other',
       images: thumbnail ? [
         {
@@ -133,7 +133,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
     description: description,
     thumbnailUrl: thumbnail,
     uploadDate: releaseDate,
-    contentUrl: `{{https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app/content/${resolvedParams.id}}}`,
+    contentUrl: `{{https://seifuku-jk.com/content/${resolvedParams.id}}}`,
     interactionStatistic: {
       '@type': 'InteractionCounter',
       interactionType: { '@type': 'WatchAction' },
@@ -142,7 +142,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
     actor: performers.map(performer => ({
       '@type': 'Person',
       name: performer.name,
-      url: `{{https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app/person/${performer.id}}}`,
+      url: `{{https://seifuku-jk.com/person/${performer.id}}}`,
     })),
   };
 
@@ -155,13 +155,13 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
         '@type': 'ListItem',
         position: 1,
         name: 'ホーム',
-        item: 'https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app',
+        item: 'https://seifuku-jk.com',
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: title,
-        item: `{{https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app/content/${resolvedParams.id}}}`,
+        item: `{{https://seifuku-jk.com/content/${resolvedParams.id}}}`,
       },
     ],
   };

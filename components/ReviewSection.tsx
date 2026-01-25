@@ -80,16 +80,16 @@ export default function ReviewSection({ pageId, pageType }: ReviewSectionProps) 
   };
 
   // 平均評価を計算
-  const calculateAverageRating = () => {
-    if (reviews.length === 0) return 0;
-    const total = reviews.reduce((sum, review) => {
-      const ratingText = review.properties['評価']?.select?.name || '5 Stars';
-      const match = ratingText.match(/(\d+) Star/);
-      const rating = match ? parseInt(match[1]) : 5;
-      return sum + rating;
-    }, 0);
-    return (total / reviews.length).toFixed(1);
-  };
+  const calculateAverageRating = (): string => {
+  if (reviews.length === 0) return '0.0';
+  const total = reviews.reduce((sum, review) => {
+    const ratingText = review.properties['評価']?.select?.name || '5 Stars';
+    const match = ratingText.match(/(\d+) Star/);
+    const rating = match ? parseInt(match[1]) : 5;
+    return sum + rating;
+  }, 0);
+  return (total / reviews.length).toFixed(1);
+};
 
   return (
     <section className="mt-12">
@@ -101,7 +101,7 @@ export default function ReviewSection({ pageId, pageType }: ReviewSectionProps) 
           </h2>
           {reviews.length > 0 && (
             <p className="text-lg text-gray-600 mt-1">
-              平均評価: <span className="text-yellow-500 font-bold">{renderStars(`${Math.round(parseFloat(calculateAverageRating()))} Stars`)}</span>
+              平均評価: <span className="text-yellow-500 font-bold">{renderStars(`${Math.round(Number(calculateAverageRating()))} Stars`)}</span>
               <span className="ml-2">({calculateAverageRating()})</span>
             </p>
           )}

@@ -74,12 +74,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   return {
     title: `${name} - プロフィール・出演作品`,
-    description: metaDescription.slice(0, 160), // 160文字以内に制限
+    description: metaDescription.slice(0, 160),
     keywords: [name, ...categoryNames.split('、').filter(Boolean), '出演作品', 'プロフィール', '動画'],
     openGraph: {
       title: `${name} - 放課後制服動画ナビ`,
       description: metaDescription.slice(0, 160),
-      url: `https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app//person/${resolvedParams.id}`,
+      url: `{{https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app/person/${resolvedParams.id}}}`,
       type: 'profile',
       images: profileImage ? [
         {
@@ -131,12 +131,12 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
     birthDate: birthDate,
     description: description,
     jobTitle: categories.map((cat: any) => cat.name).join('、'),
-    url: `https://your-domain.vercel.app/person/${resolvedParams.id}`,
+    url: `{{https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app/person/${resolvedParams.id}}}`,
     sameAs: [
       twitterUrl,
       instagramUrl,
       fanzaLink,
-    ].filter(Boolean), // 空でないURLのみ
+    ].filter(Boolean),
   };
 
   // パンくずリストの構造化データ
@@ -148,13 +148,13 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
         '@type': 'ListItem',
         position: 1,
         name: 'ホーム',
-        item: 'https://your-domain.vercel.app',
+        item: 'https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app',
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: name,
-        item: `https://your-domain.vercel.app/person/${resolvedParams.id}`,
+        item: `{{https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app/person/${resolvedParams.id}}}`,
       },
     ],
   };

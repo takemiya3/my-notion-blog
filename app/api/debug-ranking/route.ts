@@ -14,8 +14,8 @@ export async function GET() {
     };
 
     // ランキング記事を取得
-    let rankings = [];
-    let rankingError = null;
+    let rankings: any[] = [];
+    let rankingError: string | null = null;
     
     if (process.env.NOTION_RANKING_DB_ID) {
       try {
@@ -29,8 +29,8 @@ export async function GET() {
           },
         });
         rankings = response.results;
-      } catch (error: any) {
-        rankingError = error.message;
+      } catch (error) {
+        rankingError = error instanceof Error ? error.message : 'Unknown error';
       }
     }
 
@@ -38,13 +38,15 @@ export async function GET() {
       環境変数: envCheck,
       ランキング記事数: rankings.length,
       ランキングエラー: rankingError,
-      ランキングデータ: rankings.length > 0 ? rankings[0] : null,
+      ランキングデータサンプル: rankings.length > 0 ? {
+        id: (rankings[0] as any).id,
+        properties: Object.keys((rankings[0] as any).properties || {}),
+      } : null,
     }, { status: 200 });
 
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json({
-      エラー: error.message,
-      スタック: error.stack,
+      エラー: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }

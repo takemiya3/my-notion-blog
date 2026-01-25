@@ -139,13 +139,16 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
     notFound();
   }
 
-  const title = article.properties['記事タイトル']?.title[0]?.plain_text || '無題';
-  const introduction = article.properties['導入文']?.rich_text?.[0]?.plain_text || '';
-  const conclusion = article.properties['まとめ文']?.rich_text?.[0]?.plain_text || '';
-  const tags = article.properties['対象タグ']?.multi_select?.map((t: any) => t.name) || [];
-  const categories = article.properties['対象カテゴリ']?.multi_select?.map((c: any) => c.name) || [];
-  const sortBy = article.properties['並び順']?.select?.name || '閲覧数';
-  const limit = article.properties['表示件数']?.number || 10;
+  // 型アサーション追加
+  const props = article.properties as any;
+
+  const title = props['記事タイトル']?.title[0]?.plain_text || '無題';
+  const introduction = props['導入文']?.rich_text?.[0]?.plain_text || '';
+  const conclusion = props['まとめ文']?.rich_text?.[0]?.plain_text || '';
+  const tags = props['対象タグ']?.multi_select?.map((t: any) => t.name) || [];
+  const categories = props['対象カテゴリ']?.multi_select?.map((c: any) => c.name) || [];
+  const sortBy = props['並び順']?.select?.name || '閲覧数';
+  const limit = props['表示件数']?.number || 10;
 
   // タグに基づいて人物を自動取得
   const people = await getPeopleByTags(tags, categories, sortBy, limit);
@@ -156,10 +159,11 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
   // 紹介文のマップを作成
   const detailsMap = new Map();
   rankingDetails.forEach((detail: any) => {
-    const personUrls = detail.properties['人物']?.relation || [];
+    const detailProps = detail.properties as any;
+    const personUrls = detailProps['人物']?.relation || [];
     if (personUrls.length > 0) {
       const personUrl = personUrls[0];
-      const description = detail.properties['紹介文']?.rich_text?.[0]?.plain_text || '';
+      const description = detailProps['紹介文']?.rich_text?.[0]?.plain_text || '';
       detailsMap.set(personUrl, description);
     }
   });
@@ -187,11 +191,12 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
           <div className="space-y-8 mb-12">
             {people.map((person: any, index: number) => {
               const personId = person.id;
-              const name = person.properties['人名']?.title[0]?.plain_text || '名前なし';
-              const profileImage = person.properties['プロフィール画像']?.files[0]?.file?.url || 
-                                   person.properties['プロフィール画像']?.files[0]?.external?.url || '';
-              const personTags = person.properties['カテゴリ']?.multi_select || [];
-              const fanzaLink = person.properties['FANZAリンク']?.url || null;
+              const personProps = person.properties as any;
+              const name = personProps['人名']?.title[0]?.plain_text || '名前なし';
+              const profileImage = personProps['プロフィール画像']?.files[0]?.file?.url || 
+                                   personProps['プロフィール画像']?.files[0]?.external?.url || '';
+              const personTags = personProps['カテゴリ']?.multi_select || [];
+              const fanzaLink = personProps['FANZAリンク']?.url || null;
               const description = detailsMap.get(person.url) || '';
 
               return (

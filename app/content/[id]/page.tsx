@@ -1,10 +1,15 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import ReviewSection from '@/components/ReviewSection';
 import { Client } from '@notionhq/client';
+import type { Metadata } from 'next';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
+
+export const revalidate = 60;
 
 async function getContentData(contentId: string) {
   try {
@@ -16,18 +21,86 @@ async function getContentData(contentId: string) {
   }
 }
 
-async function getRelatedPeople(personIds: string[]) {
-  if (personIds.length === 0) return [];
-
+async function getPerformers(performerIds: string[]) {
   try {
-    const people = await Promise.all(
-      personIds.map((id) => notion.pages.retrieve({ page_id: id }))
+    const performers = await Promise.all(
+      performerIds.map(async (id) => {
+        try {
+          const person = await notion.pages.retrieve({ page_id: id });
+          // @ts-ignore
+          const name = person.properties['人名']?.title[0]?.plain_text || '不明';
+          return { id, name };
+        } catch {
+          return { id, name: '不明' };
+        }
+      })
     );
-    return people;
+    return performers;
   } catch (error) {
-    console.error('Error fetching related people:', error);
+    console.error('Error fetching performers:', error);
     return [];
   }
+}
+
+// メタデータ生成関数
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const resolvedParams = await params;
+  const content = await getContentData(resolvedParams.id);
+  
+  if (!content) {
+    return {
+      title: 'コンテンツが見つかりません',
+      description: 'お探しのコンテンツページは見つかりませんでした。',
+    };
+  }
+
+  // @ts-ignore
+  const properties = content.properties;
+  const title = properties['タイトル']?.title[0]?.plain_text || '無題';
+  const description = properties['説明文']?.rich_text[0]?.plain_text || '';
+  const thumbnail = properties['サムネイル']?.files[0]?.file?.url || properties['サムネイル']?.files[0]?.external?.url || '';
+  const releaseDate = properties['公開日']?.date?.start || '';
+  const categories = properties['カテゴリ']?.multi_select || [];
+  const performerRelations = properties['出演者']?.relation || [];
+  
+  // 出演者名を取得
+  const performerIds = performerRelations.map((rel: any) => rel.id);
+  const performers = await getPerformers(performerIds);
+  const performerNames = performers.map(p => p.name).join('、');
+
+  // カテゴリを文字列化
+  const categoryNames = categories.map((cat: any) => cat.name).join('、');
+
+  // descriptionを生成（説明文がない場合は自動生成）
+  const metaDescription = description || 
+    `${title}${performerNames ? ` - ${performerNames}が出演。` : '。'}${categoryNames ? `カテゴリ：${categoryNames}。` : ''}${releaseDate ? `公開日：${releaseDate}。` : ''}口コミ、評価などの詳細情報をご覧いただけます。`;
+
+  return {
+    title: title,
+    description: metaDescription.slice(0, 160), // 160文字以内に制限
+    keywords: [title, ...performerNames.split('、').filter(Boolean), ...categoryNames.split('、').filter(Boolean), 'コンテンツ', '動画'],
+    openGraph: {
+      title: `${title} - 放課後制服動画ナビ`,
+      description: metaDescription.slice(0, 160),
+      url: `https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app//content/${resolvedParams.id}`,
+      type: 'video.other',
+      publishedTime: releaseDate,
+      images: thumbnail ? [
+        {
+          url: thumbnail,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: title,
+      description: metaDescription.slice(0, 160),
+      images: thumbnail ? [thumbnail] : [],
+    },
+  };
 }
 
 export default async function ContentPage({ params }: { params: Promise<{ id: string }> }) {
@@ -45,17 +118,68 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
   const description = properties['説明文']?.rich_text[0]?.plain_text || '';
   const releaseDate = properties['公開日']?.date?.start || '';
   const views = properties['閲覧数']?.number || 0;
-  const sales = properties['売上']?.number || 0;
-  const genre = properties['ジャンル']?.select?.name || '';
-  const maker = properties['メーカー']?.rich_text?.[0]?.plain_text || '';
-  const affiliateUrl = properties['アフィリエイトURL']?.url || '';
+  const videoUrl = properties['動画URL']?.url || null;
   const categories = properties['カテゴリ']?.multi_select || [];
-  const personRelations = properties['出演者']?.relation || [];
+  const performerRelations = properties['出演者']?.relation || [];
 
-  const people = await getRelatedPeople(personRelations.map((r: any) => r.id));
+  // 出演者情報を取得
+  const performerIds = performerRelations.map((rel: any) => rel.id);
+  const performers = await getPerformers(performerIds);
+
+  // 構造化データを生成
+  const contentJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: title,
+    description: description,
+    thumbnailUrl: thumbnail,
+    uploadDate: releaseDate,
+    contentUrl: `https://your-domain.vercel.app/content/${resolvedParams.id}`,
+    interactionStatistic: {
+      '@type': 'InteractionCounter',
+      interactionType: { '@type': 'WatchAction' },
+      userInteractionCount: views,
+    },
+    // 出演者情報
+    actor: performers.map(performer => ({
+      '@type': 'Person',
+      name: performer.name,
+      url: `https://your-domain.vercel.app/person/${performer.id}`,
+    })),
+  };
+
+  // パンくずリストの構造化データ
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'ホーム',
+        item: 'https://your-domain.vercel.app',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: title,
+        item: `https://your-domain.vercel.app/content/${resolvedParams.id}`,
+      },
+    ],
+  };
 
   return (
     <>
+      {/* 構造化データを追加 */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML= __html: JSON.stringify(contentJsonLd) 
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML= __html: JSON.stringify(breadcrumbJsonLd) 
+      />
+
       <Header />
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-5xl mx-auto px-4">
@@ -66,21 +190,24 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
             <span className="text-black">{title}</span>
           </nav>
 
-          {/* コンテンツ詳細 */}
+          {/* コンテンツ情報 */}
           <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
             <div className="flex flex-col md:flex-row gap-8">
               {/* サムネイル */}
               {thumbnail && (
                 <div className="flex-shrink-0">
-                  <img
+                  <Image
                     src={thumbnail}
-                    alt={title}
-                    className="w-full md:w-80 h-auto object-cover rounded-lg shadow-md"
+                    alt={`${title}のサムネイル`}
+                    width={400}
+                    height={300}
+                    className="w-full md:w-96 h-auto object-cover rounded-lg shadow-md"
+                    priority
                   />
                 </div>
               )}
 
-              {/* コンテンツ情報 */}
+              {/* コンテンツ詳細 */}
               <div className="flex-1">
                 <h1 className="text-4xl font-bold mb-4 text-black">{title}</h1>
 
@@ -89,7 +216,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
                   {categories.map((cat: any) => (
                     <span
                       key={cat.name}
-                      className="px-3 py-1 bg-pink-100 text-pink-600 rounded-full text-sm font-semibold"
+                      className="px-3 py-1 bg-purple-100 text-purple-600 rounded-full text-sm font-semibold"
                     >
                       {cat.name}
                     </span>
@@ -97,20 +224,15 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
                 </div>
 
                 {/* メタ情報 */}
-                <div className="space-y-2 mb-6 text-gray-700">
+                <div className="space-y-2 mb-6">
                   {releaseDate && (
-                    <p><span className="font-semibold">公開日:</span> {releaseDate}</p>
+                    <p className="text-gray-700">
+                      <span className="font-semibold">📅 公開日:</span> {releaseDate}
+                    </p>
                   )}
-                  {genre && (
-                    <p><span className="font-semibold">ジャンル:</span> {genre}</p>
-                  )}
-                  {maker && (
-                    <p><span className="font-semibold">メーカー:</span> {maker}</p>
-                  )}
-                  <p><span className="font-semibold">閲覧数:</span> {views.toLocaleString()} views</p>
-                  {sales > 0 && (
-                    <p><span className="font-semibold">売上:</span> ¥{sales.toLocaleString()}</p>
-                  )}
+                  <p className="text-gray-700">
+                    <span className="font-semibold">👁 閲覧数:</span> {views.toLocaleString()}
+                  </p>
                 </div>
 
                 {/* 説明文 */}
@@ -120,62 +242,45 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
                   </p>
                 )}
 
-                {/* アフィリエイトリンク */}
-{affiliateUrl && (
-  <a
-    href={affiliateUrl}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="inline-block px-8 py-3 bg-pink-500 text-white font-bold rounded-lg hover:bg-pink-600 transition shadow-md"
-  >
-    🛒 FANZAで詳細を見る
-  </a>
-)}
+                {/* 動画URLボタン */}
+                {videoUrl && (
+                  <div className="mt-6">
+                    <a
+                      href={videoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200"
+                    >
+                      動画を見る
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* 出演者一覧 */}
-          {people.length > 0 && (
-            <section className="mb-8">
-              <h2 className="text-3xl font-bold mb-6 text-black">出演者</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                {people.map((person: any) => {
-                  const personId = person.id;
-                  const name = person.properties['人名']?.title[0]?.plain_text || '名前なし';
-                  const profileImage = person.properties['プロフィール画像']?.files[0]?.file?.url || person.properties['プロフィール画像']?.files[0]?.external?.url || '';
-                  const fanzaLink = person.properties['FANZAリンク']?.url || null;
-
-                  return (
-                    <div key={personId} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4">
-                      <Link href={`/person/${personId}`}>
-                        {profileImage && (
-                          <img
-                            src={profileImage}
-                            alt={name}
-                            className="w-full h-48 object-cover rounded-lg mb-3"
-                          />
-                        )}
-                        <h3 className="font-bold text-center text-black mb-3">{name}</h3>
-                      </Link>
-                      
-                      {/* FANZAリンクボタン */}
-                      {fanzaLink && (
-                        <a
-                          href={fanzaLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block text-center bg-red-600 hover:bg-red-700 text-white text-sm font-bold py-2 px-3 rounded-lg transition-colors duration-200"
-                        >
-                          動画を見る
-                        </a>
-                      )}
-                    </div>
-                  );
-                })}
+          {performers.length > 0 && (
+            <section className="mb-12">
+              <h2 className="text-3xl font-bold mb-6 text-black">
+                出演者 ({performers.length}名)
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {performers.map((performer) => (
+                  <Link
+                    key={performer.id}
+                    href={`/person/${performer.id}`}
+                    className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow text-center"
+                  >
+                    <p className="font-bold text-black">{performer.name}</p>
+                  </Link>
+                ))}
               </div>
             </section>
           )}
+
+          {/* 口コミセクション */}
+          <ReviewSection pageId={resolvedParams.id} pageType="コンテンツ" />
         </div>
       </div>
       <Footer />

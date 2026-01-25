@@ -16,7 +16,7 @@ async function getRankingArticle(slug: string) {
         and: [
           {
             property: 'スラッグ',
-            rich_text: {
+            text: {  // ← text に変更
               equals: slug,
             },
           },

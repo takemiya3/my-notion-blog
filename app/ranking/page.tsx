@@ -51,9 +51,10 @@ export default async function RankingPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {rankings.map((ranking: any) => {
-                const rankingId = ranking.id;
-                const title = ranking.properties['記事タイトル']?.title[0]?.plain_text || '無題';
-                const slug = ranking.properties['スラッグ']?.rich_text?.[0]?.plain_text || '';
+  const rankingId = ranking.id;
+  const props = (ranking as any).properties;
+  const title = props['記事タイトル']?.title?.[0]?.plain_text || '無題';
+  const slug = props['スラッグ']?.rich_text?.[0]?.plain_text || '';  // ← text に変更
                 const theme = ranking.properties['テーマ']?.select?.name || '';
                 const thumbnail = ranking.properties['サムネイル']?.files[0]?.file?.url || 
                                  ranking.properties['サムネイル']?.files[0]?.external?.url || '';

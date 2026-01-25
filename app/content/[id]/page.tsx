@@ -42,11 +42,74 @@ async function getPerformers(performerIds: string[]) {
   }
 }
 
+// 関連する人気コンテンツを取得
+async function getRelatedContents(category: string, genre: string, currentContentId: string, limit: number = 10) {
+  try {
+    const filters: any[] = [
+      {
+        property: '公開ステータス',
+        checkbox: {
+          equals: true,
+        },
+      },
+    ];
+
+    // カテゴリまたはジャンルでフィルタリング
+    const categoryGenreFilters: any[] = [];
+    
+    if (category) {
+      categoryGenreFilters.push({
+        property: 'カテゴリ',
+        select: {
+          equals: category,
+        },
+      });
+    }
+
+    if (genre) {
+      categoryGenreFilters.push({
+        property: 'ジャンル',
+        select: {
+          equals: genre,
+        },
+      });
+    }
+
+    if (categoryGenreFilters.length > 0) {
+      filters.push({
+        or: categoryGenreFilters,
+      });
+    }
+
+    const response = await notion.databases.query({
+      database_id: process.env.NOTION_CONTENT_DB_ID!,
+      filter: {
+        and: filters,
+      },
+      sorts: [
+        {
+          property: '閲覧数',
+          direction: 'descending',
+        },
+      ],
+      page_size: limit + 1, // 自分自身を除外するため+1
+    });
+
+    // 自分自身を除外
+    const relatedContents = response.results.filter((content: any) => content.id !== currentContentId);
+
+    return relatedContents.slice(0, limit);
+  } catch (error) {
+    console.error('Error fetching related contents:', error);
+    return [];
+  }
+}
+
 // メタデータ生成関数
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const resolvedParams = await params;
   const content = await getContentData(resolvedParams.id);
-  
+
   if (!content) {
     return {
       title: 'コンテンツが見つかりません',
@@ -62,7 +125,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const releaseDate = properties['公開日']?.date?.start || '';
   const categories = properties['カテゴリ']?.multi_select || [];
   const performerRelations = properties['出演者']?.relation || [];
-  
+
   // 出演者名を取得
   const performerIds = performerRelations.map((rel: any) => rel.id);
   const performers = await getPerformers(performerIds);
@@ -72,7 +135,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const categoryNames = categories.map((cat: any) => cat.name).join('、');
 
   // descriptionを生成（説明文がない場合は自動生成）
-  const metaDescription = description || 
+  const metaDescription = description ||
     `${title}${performerNames ? ` - ${performerNames}が出演。` : '。'}${categoryNames ? `カテゴリ：${categoryNames}。` : ''}${releaseDate ? `公開日：${releaseDate}。` : ''}口コミ、評価などの詳細情報をご覧いただけます。`;
 
   return {
@@ -82,7 +145,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     openGraph: {
       title: `${title} - 放課後制服動画ナビ`,
       description: metaDescription.slice(0, 160),
-      url: `{{https://seifuku-jk.com/content/${resolvedParams.id}}}`,
+      url: `https://seifuku-jk.com/content/${resolvedParams.id}`,
       type: 'video.other',
       images: thumbnail ? [
         {
@@ -119,11 +182,16 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
   const views = properties['閲覧数']?.number || 0;
   const videoUrl = properties['動画URL']?.url || null;
   const categories = properties['カテゴリ']?.multi_select || [];
+  const category = properties['カテゴリ']?.select?.name || '';
+  const genre = properties['ジャンル']?.select?.name || '';
   const performerRelations = properties['出演者']?.relation || [];
 
   // 出演者情報を取得
   const performerIds = performerRelations.map((rel: any) => rel.id);
   const performers = await getPerformers(performerIds);
+
+  // 関連する人気コンテンツを取得
+  const relatedContents = await getRelatedContents(category, genre, resolvedParams.id, 10);
 
   // 構造化データを生成
   const contentJsonLd = {
@@ -133,7 +201,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
     description: description,
     thumbnailUrl: thumbnail,
     uploadDate: releaseDate,
-    contentUrl: `{{https://seifuku-jk.com/content/${resolvedParams.id}}}`,
+    contentUrl: `https://seifuku-jk.com/content/${resolvedParams.id}`,
     interactionStatistic: {
       '@type': 'InteractionCounter',
       interactionType: { '@type': 'WatchAction' },
@@ -142,7 +210,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
     actor: performers.map(performer => ({
       '@type': 'Person',
       name: performer.name,
-      url: `{{https://seifuku-jk.com/person/${performer.id}}}`,
+      url: `https://seifuku-jk.com/person/${performer.id}`,
     })),
   };
 
@@ -161,7 +229,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
         '@type': 'ListItem',
         position: 2,
         name: title,
-        item: `{{https://seifuku-jk.com/content/${resolvedParams.id}}}`,
+        item: `https://seifuku-jk.com/content/${resolvedParams.id}`,
       },
     ],
   };
@@ -171,11 +239,11 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
       {/* 構造化データを追加 */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={ { __html: JSON.stringify(contentJsonLd) } }
+        dangerouslySetInnerHTML={{__html: JSON.stringify(contentJsonLd)}} 
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={ {__html: JSON.stringify(breadcrumbJsonLd) } }
+        dangerouslySetInnerHTML={{__html: JSON.stringify(breadcrumbJsonLd)}}
       />
 
       <Header />
@@ -211,14 +279,16 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
 
                 {/* カテゴリタグ */}
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {categories.map((cat: any) => (
-                    <span
-                      key={cat.name}
-                      className="px-3 py-1 bg-purple-100 text-purple-600 rounded-full text-sm font-semibold"
-                    >
-                      {cat.name}
+                  {category && (
+                    <span className="px-3 py-1 bg-purple-100 text-purple-600 rounded-full text-sm font-semibold">
+                      {category}
                     </span>
-                  ))}
+                  )}
+                  {genre && (
+                    <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm font-semibold">
+                      {genre}
+                    </span>
+                  )}
                 </div>
 
                 {/* メタ情報 */}
@@ -276,6 +346,53 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
               </div>
             </section>
           )}
+
+          {/* 人気の作品セクション */}
+          <section className="mb-12">
+            <h2 className="text-3xl font-bold mb-6 text-black">
+              🔥 人気の作品
+            </h2>
+            {relatedContents.length === 0 ? (
+              <p className="text-center text-gray-600 py-12">
+                関連するコンテンツが見つかりませんでした
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                {relatedContents.map((relatedContent: any) => {
+                  const contentId = relatedContent.id;
+                  const contentTitle = relatedContent.properties['タイトル']?.title[0]?.plain_text || '無題';
+                  const contentThumbnail = relatedContent.properties['サムネイル']?.files[0]?.file?.url || relatedContent.properties['サムネイル']?.files[0]?.external?.url || '';
+                  const contentViews = relatedContent.properties['閲覧数']?.number || 0;
+
+                  return (
+                    <Link
+                      key={contentId}
+                      href={`/content/${contentId}`}
+                      className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden"
+                    >
+                      {contentThumbnail && (
+                        <Image
+                          src={contentThumbnail}
+                          alt={contentTitle}
+                          width={200}
+                          height={150}
+                          className="w-full h-32 object-cover"
+                        />
+                      )}
+                      <div className="p-3">
+                        <h3 className="font-bold text-sm mb-1 line-clamp-2 text-black">
+                          {contentTitle}
+                        </h3>
+                        <p className="text-xs text-gray-600">
+                          👁 {contentViews.toLocaleString()}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </section>
 
           {/* 口コミセクション */}
           <ReviewSection pageId={resolvedParams.id} pageType="コンテンツ" />

@@ -20,14 +20,22 @@ export default function ReviewSection({ pageId, pageType }: ReviewSectionProps) 
   }, [pageId]);
 
   const fetchReviews = async () => {
-    try {
-      const res = await fetch(`/api/reviews/${pageId}`);
-      const data = await res.json();
+  try {
+    const res = await fetch(`/api/reviews/${pageId}`);
+    const data = await res.json();
+    
+    // データが配列かチェック
+    if (Array.isArray(data)) {
       setReviews(data);
-    } catch (error) {
-      console.error('口コミの取得に失敗:', error);
+    } else {
+      console.error('Invalid data format:', data);
+      setReviews([]);
     }
-  };
+  } catch (error) {
+    console.error('口コミの取得に失敗:', error);
+    setReviews([]);
+  }
+};
 
   // 口コミを投稿
   const submitReview = async () => {

@@ -69,12 +69,11 @@ export async function GET(
     // 両方の結果を結合
     const allReviews = [...personReviews.results, ...contentReviews.results];
     
+    // 必ず配列を返す
     return NextResponse.json(allReviews);
   } catch (error) {
     console.error('Error fetching reviews:', error);
-    return NextResponse.json(
-      { error: '口コミの取得に失敗しました' },
-      { status: 500 }
-    );
+    // エラー時も空配列を返す
+    return NextResponse.json([], { status: 200 });
   }
 }

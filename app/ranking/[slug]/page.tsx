@@ -45,11 +45,6 @@ async function getRankingArticle(slug: string) {
 
 async function getPeopleByTags(tags: string[], categories: string[], sortBy: string, limit: number) {
   console.log('👥 getPeopleByTags called');
-  console.log('  - Tags:', tags);
-  console.log('  - Categories:', categories);
-  console.log('  - SortBy:', sortBy);
-  console.log('  - Limit:', limit);
-
   try {
     const filters: any[] = [
       {
@@ -160,11 +155,18 @@ async function getRankingDetails(rankingId: string) {
   }
 }
 
-export default async function RankingArticlePage({ params }: { params: { slug: string } }) {
-  console.log('🚀 Page render started for slug:', params.slug);
+// ★★★ ここを修正：paramsをawaitする ★★★
+export default async function RankingArticlePage({ 
+  params 
+}: { 
+  params: Promise<{ slug: string }> 
+}) {
+  const { slug } = await params; // ← awaitを追加
+  
+  console.log('🚀 Page render started for slug:', slug);
 
   try {
-    const article = await getRankingArticle(params.slug);
+    const article = await getRankingArticle(slug);
 
     if (!article) {
       console.log('❌ Calling notFound()');
@@ -325,7 +327,7 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
               <p className="text-gray-700 mb-4 font-mono text-sm">
                 {error instanceof Error ? error.message : JSON.stringify(error)}
               </p>
-              <p className="text-sm text-gray-500">スラッグ: {params.slug}</p>
+              <p className="text-sm text-gray-500">スラッグ: {slug}</p>
             </div>
           </div>
         </div>

@@ -164,11 +164,11 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
       {/* 構造化データを追加 */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML= __html: JSON.stringify(personJsonLd) 
+        dangerouslySetInnerHTML={ {__html: JSON.stringify(personJsonLd) } }
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML= __html: JSON.stringify(breadcrumbJsonLd) 
+        dangerouslySetInnerHTML={ {__html: JSON.stringify(breadcrumbJsonLd) } }
       />
 
       <Header />

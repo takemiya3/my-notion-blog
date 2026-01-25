@@ -77,14 +77,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   return {
     title: title,
-    description: metaDescription.slice(0, 160), // 160文字以内に制限
+    description: metaDescription.slice(0, 160),
     keywords: [title, ...performerNames.split('、').filter(Boolean), ...categoryNames.split('、').filter(Boolean), 'コンテンツ', '動画'],
     openGraph: {
       title: `${title} - 放課後制服動画ナビ`,
       description: metaDescription.slice(0, 160),
-      url: `https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app//content/${resolvedParams.id}`,
+      url: `{{https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app/content/${resolvedParams.id}}}`,
       type: 'video.other',
-      publishedTime: releaseDate,
       images: thumbnail ? [
         {
           url: thumbnail,
@@ -134,17 +133,16 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
     description: description,
     thumbnailUrl: thumbnail,
     uploadDate: releaseDate,
-    contentUrl: `https://your-domain.vercel.app/content/${resolvedParams.id}`,
+    contentUrl: `{{https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app/content/${resolvedParams.id}}}`,
     interactionStatistic: {
       '@type': 'InteractionCounter',
       interactionType: { '@type': 'WatchAction' },
       userInteractionCount: views,
     },
-    // 出演者情報
     actor: performers.map(performer => ({
       '@type': 'Person',
       name: performer.name,
-      url: `https://your-domain.vercel.app/person/${performer.id}`,
+      url: `{{https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app/person/${performer.id}}}`,
     })),
   };
 
@@ -157,13 +155,13 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
         '@type': 'ListItem',
         position: 1,
         name: 'ホーム',
-        item: 'https://your-domain.vercel.app',
+        item: 'https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app',
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: title,
-        item: `https://your-domain.vercel.app/content/${resolvedParams.id}`,
+        item: `{{https://my-notion-blog-3cb9aojvj-taigas-projects-97fb999e.vercel.app/content/${resolvedParams.id}}}`,
       },
     ],
   };
@@ -173,11 +171,11 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
       {/* 構造化データを追加 */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML= __html: JSON.stringify(contentJsonLd) 
+        dangerouslySetInnerHTML={ { __html: JSON.stringify(contentJsonLd) } }
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML= __html: JSON.stringify(breadcrumbJsonLd) 
+        dangerouslySetInnerHTML={ {__html: JSON.stringify(breadcrumbJsonLd) } }
       />
 
       <Header />

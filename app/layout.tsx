@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://your-domain.vercel.app'), // あなたのドメインに変更
+  metadataBase: new URL('https://seifuku-jk.com'),
   title: {
     default: '放課後制服動画ナビ - 人物・コンテンツ検索サイト',
     template: '%s | 放課後制服動画ナビ'
@@ -26,13 +26,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'ja_JP',
-    url: 'https://your-domain.vercel.app',
+    url: 'https://seifuku-jk.com',
     siteName: '放課後制服動画ナビ',
     title: '放課後制服動画ナビ - 人物・コンテンツ検索サイト',
     description: '人物とコンテンツの情報を簡単に検索できるサイト。女優、モデル、グラビア、アイドル、タレントの詳細情報や出演作品を探せます。',
     images: [
       {
-        url: '/og-image.png', // OGP画像を作成して配置
+        url: '/og-image.png',
         width: 1200,
         height: 630,
         alt: '放課後制服動画ナビ',
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     images: ['/og-image.png'],
   },
   verification: {
-    google: 'あなたのGoogle Search Consoleの認証コード',
+    google: 'WBCY4vg92wAP_uVnvFYzxTFdXam-8wjHu6HYUp9yN1U',
   },
 };
 

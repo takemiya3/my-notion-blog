@@ -16,7 +16,7 @@ async function getRankingArticle(slug: string) {
         and: [
           {
             property: 'スラッグ',
-            text: {  // ← text に変更
+            rich_text: {
               equals: slug,
             },
           },
@@ -48,36 +48,50 @@ async function getPeopleByTags(tags: string[], categories: string[], sortBy: str
       },
     ];
 
-    // タグで絞り込み
+    // タグまたはカテゴリで絞り込み（OR条件）
     if (tags && tags.length > 0) {
-      tags.forEach(tag => {
-        filters.push({
-          property: 'カテゴリ',
-          multi_select: {
-            contains: tag,
-          },
-        });
-      });
-    }
-
-    // カテゴリで絞り込み
-    if (categories && categories.length > 0) {
-      categories.forEach(category => {
-        filters.push({
+      const tagFilters = tags.map(tag => ({
+        property: 'カテゴリ',
+        multi_select: {
+          contains: tag,
+        },
+      }));
+      
+      if (categories && categories.length > 0) {
+        const categoryFilters = categories.map(category => ({
           property: 'カテゴリ',
           multi_select: {
             contains: category,
           },
+        }));
+        
+        filters.push({
+          or: [...tagFilters, ...categoryFilters],
         });
+      } else {
+        filters.push({
+          or: tagFilters,
+        });
+      }
+    } else if (categories && categories.length > 0) {
+      const categoryFilters = categories.map(category => ({
+        property: 'カテゴリ',
+        multi_select: {
+          contains: category,
+        },
+      }));
+      
+      filters.push({
+        or: categoryFilters,
       });
     }
 
-    const sortProperty = sortBy === '閲覧数' ? '閲覧数' : 
-                         sortBy === '売上' ? '売上' : 
-                         sortBy === '新着' ? '生年月日' : '人名';
+    const sortProperty = sortBy === '閲覧数' ? '閲覧数' :
+                        sortBy === '売上' ? '売上' :
+                        sortBy === '新着' ? '生年月日' : '人名';
 
     const response = await notion.databases.query({
-      database_id: process.env.NOTION_PERSON_DB_ID!,
+      database_id: process.env.NOTION_PEOPLE_DB_ID!,
       filter: {
         and: filters,
       },
@@ -97,7 +111,7 @@ async function getPeopleByTags(tags: string[], categories: string[], sortBy: str
   }
 }
 
-async function getRankingDetails(rankingUrl: string) {
+async function getRankingDetails(rankingId: string) {
   try {
     const response = await notion.databases.query({
       database_id: process.env.NOTION_RANKING_DETAIL_DB_ID!,
@@ -106,7 +120,7 @@ async function getRankingDetails(rankingUrl: string) {
           {
             property: 'ランキング記事',
             relation: {
-              contains: rankingUrl,
+              contains: rankingId,
             },
           },
           {
@@ -139,7 +153,6 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
     notFound();
   }
 
-  // 型アサーション
   const props = (article as any).properties;
 
   const title = props['記事タイトル']?.title?.[0]?.plain_text || '無題';
@@ -156,15 +169,15 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
   // ランキング詳細（個別紹介文）を取得
   const rankingDetails = await getRankingDetails(article.id);
 
-  // 紹介文のマップを作成
+  // 紹介文のマップを作成（person.id をキーにする）
   const detailsMap = new Map<string, string>();
   rankingDetails.forEach((detail: any) => {
     const detailProps = detail.properties;
-    const personUrls = detailProps['人物']?.relation || [];
-    if (personUrls.length > 0) {
-      const personUrl = personUrls[0];
+    const personRelations = detailProps['人物']?.relation || [];
+    if (personRelations.length > 0) {
+      const personId = personRelations[0].id;
       const description = detailProps['紹介文']?.rich_text?.[0]?.plain_text || '';
-      detailsMap.set(personUrl, description);
+      detailsMap.set(personId, description);
     }
   });
 
@@ -181,7 +194,7 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
           {/* 導入文 */}
           {introduction && (
             <div className="bg-white rounded-xl shadow-md p-6 mb-12">
-              <p className="text-gray-700 leading-relaxed">
+              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                 {introduction}
               </p>
             </div>
@@ -193,70 +206,75 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
               const personId = person.id;
               const personProps = person.properties;
               const name = personProps['人名']?.title?.[0]?.plain_text || '名前なし';
-              const profileImage = personProps['プロフィール画像']?.files?.[0]?.file?.url || 
-                                   personProps['プロフィール画像']?.files?.[0]?.external?.url || '';
+              const profileImage = personProps['プロフィール画像']?.files?.[0]?.file?.url ||
+                                  personProps['プロフィール画像']?.files?.[0]?.external?.url || '';
               const personTags = personProps['カテゴリ']?.multi_select || [];
               const fanzaLink = personProps['FANZAリンク']?.url || null;
-              const description = detailsMap.get(person.url) || '';
+              const description = detailsMap.get(personId) || '';
 
               return (
-                <div key={personId} className="bg-white rounded-xl shadow-lg p-6">
-                  {/* 順位と名前 */}
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-2xl w-16 h-16 rounded-full flex items-center justify-center shadow-lg">
-                      {index + 1}
-                    </div>
-                    <h3 className="text-2xl font-bold text-black">{name}</h3>
-                  </div>
-
-                  {/* 画像 */}
-                  {profileImage && (
-                    <div className="mb-4">
-                      <img
-                        src={profileImage}
-                        alt={name}
-                        className="w-full h-80 object-cover rounded-lg"
-                      />
-                    </div>
-                  )}
-
-                  {/* タグ */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {personTags.map((tag: any) => (
-                      <span
-                        key={tag.name}
-                        className="px-3 py-1 bg-pink-100 text-pink-600 rounded-full text-sm font-semibold"
-                      >
-                        {tag.name}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* 紹介文 */}
-                  {description && (
-                    <div className="text-gray-700 mb-6 leading-relaxed">
-                      {description}
-                    </div>
-                  )}
-
-                  {/* ボタン */}
-                  <div className="flex gap-3">
-                    {fanzaLink && (
-                      <a
-                        href={fanzaLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg text-center transition-colors"
-                      >
-                        🔴 FANZAで見る
-                      </a>
+                <div key={personId} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow">
+                  <div className="flex flex-col md:flex-row">
+                    {/* 画像 */}
+                    {profileImage && (
+                      <div className="md:w-2/5">
+                        <img
+                          src={profileImage}
+                          alt={name}
+                          className="w-full h-72 md:h-full object-cover"
+                        />
+                      </div>
                     )}
-                    <Link
-                      href={`/person/${personId}`}
-                      className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-lg text-center transition-colors"
-                    >
-                      🔍 この女優の作品を探す
-                    </Link>
+
+                    {/* コンテンツ */}
+                    <div className="flex-1 p-6">
+                      {/* 順位と名前 */}
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-3xl w-16 h-16 rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
+                          {index + 1}
+                        </div>
+                        <h3 className="text-2xl font-bold text-black">{name}</h3>
+                      </div>
+
+                      {/* タグ */}
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {personTags.map((tag: any) => (
+                          <span
+                            key={tag.name}
+                            className="px-3 py-1 bg-pink-100 text-pink-600 rounded-full text-sm font-semibold"
+                          >
+                            {tag.name}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* 紹介文 */}
+                      {description && (
+                        <div className="text-gray-700 mb-6 leading-relaxed whitespace-pre-wrap">
+                          {description}
+                        </div>
+                      )}
+
+                      {/* ボタン */}
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        {fanzaLink && (
+                          <a
+                            href={fanzaLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg text-center transition-colors"
+                          >
+                            🔴 FANZAで見る
+                          </a>
+                        )}
+                        <Link
+                          href={`/person/${personId}`}
+                          className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-lg text-center transition-colors"
+                        >
+                          🔍 この女優の作品を探す
+                        </Link>
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
@@ -266,7 +284,8 @@ export default async function RankingArticlePage({ params }: { params: { slug: s
           {/* まとめ文 */}
           {conclusion && (
             <div className="bg-white rounded-xl shadow-md p-6">
-              <p className="text-gray-700 leading-relaxed">
+              <h2 className="text-2xl font-bold mb-4 text-black">まとめ</h2>
+              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                 {conclusion}
               </p>
             </div>

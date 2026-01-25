@@ -229,14 +229,14 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   return (
     <>
       {/* 構造化データを追加 */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML= __html: JSON.stringify(personJsonLd) 
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML= __html: JSON.stringify(breadcrumbJsonLd) 
-      />
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{__html: JSON.stringify(personJsonLd)}}
+/>
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{__html: JSON.stringify(breadcrumbJsonLd)}}
+/>
 
       <Header />
       <div className="min-h-screen bg-gray-50 py-8">

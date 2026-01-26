@@ -26,17 +26,28 @@ export default function Home() {
   const [peopleSort, setPeopleSort] = useState<SortOption>('name');
   const [loading, setLoading] = useState(true);
 
-  // 🔥 Notionから動的にカテゴリを抽出
+  // 🔥 NotionからPeopleとContents両方からカテゴリを抽出
   const categories = useMemo(() => {
     const categorySet = new Set<string>();
+    
+    // 人物マスタからカテゴリを抽出
     people.forEach((person: Person) => {
       const personCategories = person.properties['カテゴリ']?.multi_select || [];
       personCategories.forEach((cat: any) => {
         categorySet.add(cat.name);
       });
     });
+    
+    // コンテンツからもカテゴリを抽出
+    contents.forEach((content: Content) => {
+      const contentCategories = content.properties['カテゴリ']?.multi_select || [];
+      contentCategories.forEach((cat: any) => {
+        categorySet.add(cat.name);
+      });
+    });
+    
     return ['全て', ...Array.from(categorySet).sort()];
-  }, [people]);
+  }, [people, contents]);
 
   useEffect(() => {
     async function fetchData() {
@@ -184,7 +195,7 @@ export default function Home() {
     setSelectedGenre(genre);
     // ジャンルをクリックしたら人物一覧までスクロール
     setTimeout(() => {
-      document.getElementById('people')?.scrollIntoView({ 
+      document.getElementById('people')?.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
       });
@@ -215,6 +226,17 @@ export default function Home() {
       'グラビア': { bg: 'bg-orange-500', hover: 'hover:bg-orange-600', selected: 'bg-orange-600' },
       'アイドル': { bg: 'bg-yellow-500', hover: 'hover:bg-yellow-600', selected: 'bg-yellow-600' },
       'タレント': { bg: 'bg-blue-500', hover: 'hover:bg-blue-600', selected: 'bg-blue-600' },
+      // コンテンツ用のカテゴリも追加
+      '美少女': { bg: 'bg-pink-400', hover: 'hover:bg-pink-500', selected: 'bg-pink-500' },
+      'ブルマ': { bg: 'bg-blue-400', hover: 'hover:bg-blue-500', selected: 'bg-blue-500' },
+      'スクール水着': { bg: 'bg-cyan-500', hover: 'hover:bg-cyan-600', selected: 'bg-cyan-600' },
+      '体操服': { bg: 'bg-red-400', hover: 'hover:bg-red-500', selected: 'bg-red-500' },
+      'ブレザー': { bg: 'bg-indigo-400', hover: 'hover:bg-indigo-500', selected: 'bg-indigo-500' },
+      'セーラー服': { bg: 'bg-purple-400', hover: 'hover:bg-purple-500', selected: 'bg-purple-500' },
+      '制服': { bg: 'bg-gray-600', hover: 'hover:bg-gray-700', selected: 'bg-gray-700' },
+      '輪姦': { bg: 'bg-red-600', hover: 'hover:bg-red-700', selected: 'bg-red-700' },
+      'レイプ': { bg: 'bg-red-700', hover: 'hover:bg-red-800', selected: 'bg-red-800' },
+      'ハード': { bg: 'bg-orange-600', hover: 'hover:bg-orange-700', selected: 'bg-orange-700' },
     };
     const color = colors[category] || colors['全て'];
     return isSelected

@@ -11,6 +11,24 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 export const revalidate = 60;
 
+// 年齢を計算する関数
+function calculateAge(birthDate: string): number | null {
+  if (!birthDate) return null;
+  
+  const today = new Date();
+  const birth = new Date(birthDate);
+  
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  
+  // 誕生日がまだ来ていない場合は1を引く
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  
+  return age;
+}
+
 async function getPersonData(personId: string) {
   try {
     const person = await notion.pages.retrieve({ page_id: personId });
@@ -174,6 +192,12 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   const description = properties['説明文']?.rich_text[0]?.plain_text || '';
   const threeSizes = properties['スリーサイズ']?.rich_text[0]?.plain_text || '';
   const fanzaLink = properties['FANZAリンク']?.url || null;
+  const birthplace = properties['出身']?.rich_text[0]?.plain_text || '';
+  const height = properties['身長']?.number || null;
+  const cupSize = properties['カップ数']?.select?.name || '';
+
+  // 年齢を計算
+  const age = calculateAge(birthDate);
 
   const categories = properties['カテゴリ']?.multi_select || [];
   const categoryNames = categories.map((cat: any) => cat.name);
@@ -272,19 +296,50 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
                   ))}
                 </div>
 
-                {/* 生年月日 */}
-                {birthDate && (
-                  <p className="text-gray-700 mb-2">
-                    <span className="font-semibold">生年月日:</span> {birthDate}
-                  </p>
-                )}
+                {/* プロフィール情報グリッド */}
+                <div className="space-y-2 mb-6">
+                  {/* 生年月日 */}
+                  {birthDate && (
+                    <p className="text-gray-700">
+                      <span className="font-semibold">生年月日:</span> {birthDate}
+                    </p>
+                  )}
 
-                {/* スリーサイズ */}
-                {threeSizes && (
-                  <p className="text-gray-700 mb-4">
-                    <span className="font-semibold">スリーサイズ:</span> {threeSizes}
-                  </p>
-                )}
+                  {/* 年齢 */}
+                  {age !== null && (
+                    <p className="text-gray-700">
+                      <span className="font-semibold">年齢:</span> {age}歳
+                    </p>
+                  )}
+
+                  {/* 出身 */}
+                  {birthplace && (
+                    <p className="text-gray-700">
+                      <span className="font-semibold">出身:</span> {birthplace}
+                    </p>
+                  )}
+
+                  {/* 身長 */}
+                  {height && (
+                    <p className="text-gray-700">
+                      <span className="font-semibold">身長:</span> {height}cm
+                    </p>
+                  )}
+
+                  {/* カップ数 */}
+                  {cupSize && (
+                    <p className="text-gray-700">
+                      <span className="font-semibold">カップ数:</span> {cupSize}カップ
+                    </p>
+                  )}
+
+                  {/* スリーサイズ */}
+                  {threeSizes && (
+                    <p className="text-gray-700">
+                      <span className="font-semibold">スリーサイズ:</span> {threeSizes}
+                    </p>
+                  )}
+                </div>
 
                 {/* 説明文 */}
                 {description && (

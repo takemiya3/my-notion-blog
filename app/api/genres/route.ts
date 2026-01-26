@@ -1,31 +1,28 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { Client } from '@notionhq/client';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
+const databaseId = process.env.NOTION_GENRES_DATABASE_ID!;
 
-export const revalidate = 60;
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const response = await notion.databases.query({
-      database_id: process.env.NOTION_GENRE_DB_ID!,
-      filter: {
-        property: '公開',
-        checkbox: {
-          equals: true,
-        },
-      },
+    const query: any = {
+      database_id: databaseId,
       sorts: [
         {
-          property: '表示順',
+          property: 'ジャンル名',
           direction: 'ascending',
         },
       ],
-    });
+    };
 
+    const response = await notion.databases.query(query);
     return NextResponse.json(response.results);
   } catch (error) {
     console.error('Error fetching genres:', error);
-    return NextResponse.json([], { status: 200 });
+    return NextResponse.json(
+      { error: 'Failed to fetch genres' },
+      { status: 500 }
+    );
   }
 }

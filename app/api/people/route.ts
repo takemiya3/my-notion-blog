@@ -1,14 +1,46 @@
-import { NextResponse } from 'next/server';
-import { getPeople } from '@/lib/notion';
+import { NextRequest, NextResponse } from 'next/server';
+import { Client } from '@notionhq/client';
 
-export const revalidate = 60;
+const notion = new Client({ auth: process.env.NOTION_API_KEY });
+const databaseId = process.env.NOTION_PEOPLE_DATABASE_ID!;
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const people = await getPeople();
-    return NextResponse.json(people);
+    const { searchParams } = new URL(request.url);
+    const categoryFilter = searchParams.get('category');
+    const limit = searchParams.get('limit');
+
+    const query: any = {
+      database_id: databaseId,
+      sorts: [
+        {
+          property: '作成日時',
+          direction: 'descending',
+        },
+      ],
+    };
+
+    // 複数カテゴリに対応（multi_select の contains を使用）
+    if (categoryFilter) {
+      query.filter = {
+        property: 'カテゴリ',
+        multi_select: {
+          contains: categoryFilter
+        }
+      };
+    }
+
+    if (limit) {
+      query.page_size = parseInt(limit, 10);
+    }
+
+    const response = await notion.databases.query(query);
+    return NextResponse.json(response.results);
   } catch (error) {
     console.error('Error fetching people:', error);
-    return NextResponse.json({ error: 'Failed to fetch people' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch people' },
+      { status: 500 }
+    );
   }
 }

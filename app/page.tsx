@@ -16,7 +16,7 @@ export default function Home() {
         const [peopleRes, contentsRes, categoryImagesRes] = await Promise.all([
           fetch('/api/people'),
           fetch('/api/contents'),
-          fetch('/api/genres'), // ← ジャンルDBから画像を取得
+          fetch('/api/genres'),
         ]);
         const peopleData = await peopleRes.json();
         const contentsData = await contentsRes.json();
@@ -34,17 +34,14 @@ export default function Home() {
     fetchData();
   }, []);
 
-  // カテゴリを人物とコンテンツの両方から抽出（重複なし）
   const extractCategories = () => {
     const categorySet = new Set<string>();
 
-    // 人物のカテゴリ
     people.forEach((person: any) => {
       const categories = person.properties?.['カテゴリ']?.multi_select || [];
       categories.forEach((cat: any) => categorySet.add(cat.name));
     });
 
-    // コンテンツのカテゴリ
     contents.forEach((content: any) => {
       const categories = content.properties?.['カテゴリ']?.multi_select || [];
       categories.forEach((cat: any) => categorySet.add(cat.name));
@@ -55,7 +52,6 @@ export default function Home() {
 
   const categories = extractCategories();
 
-  // カテゴリフィルタリング（複数カテゴリ対応）
   const filteredPeople = selectedCategory
     ? people.filter((person: any) => {
         const personCategories = person.properties?.['カテゴリ']?.multi_select || [];
@@ -70,7 +66,6 @@ export default function Home() {
       })
     : contents;
 
-  // カテゴリごとの画像を取得
   const getCategoryImage = (category: string) => {
     const categoryData = categoryImages.find(
       (cat: any) => cat.properties['ジャンル名']?.title[0]?.plain_text === category
@@ -85,17 +80,16 @@ export default function Home() {
     return '';
   };
 
-  // 公開されているコンテンツのみ表示
   const publishedContents = filteredContents.filter(
     (content: any) => content.properties?.['公開']?.checkbox === true
   );
 
   if (loading) {
     return (
-      <div style= 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style=
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         minHeight: '100vh',
         fontSize: '18px',
         color: '#666'
@@ -106,41 +100,41 @@ export default function Home() {
   }
 
   return (
-    <div style= 
-      maxWidth: '1200px', 
-      margin: '0 auto', 
+    <div style=
+      maxWidth: '1200px',
+      margin: '0 auto',
       padding: '40px 20px',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     >
-      <h1 style= 
-        fontSize: '42px', 
-        fontWeight: 'bold', 
+      <h1 style=
+        fontSize: '42px',
+        fontWeight: 'bold',
         marginBottom: '12px',
         color: '#1a1a1a'
       >
         押入れの暮らし
       </h1>
-      <p style= 
-        fontSize: '16px', 
-        color: '#666', 
+      <p style=
+        fontSize: '16px',
+        color: '#666',
         marginBottom: '40px'
       >
         あなたの性癖を叶える場所
       </p>
 
-      {/* カテゴリフィルター（画像付きボタン） */}
+      {/* カテゴリフィルター */}
       <div style= marginBottom: '40px' >
-        <h2 style= 
-          fontSize: '24px', 
-          fontWeight: 'bold', 
+        <h2 style=
+          fontSize: '24px',
+          fontWeight: 'bold',
           marginBottom: '20px',
           color: '#1a1a1a'
         >
           カテゴリで絞り込み
         </h2>
-        <div style= 
-          display: 'flex', 
-          gap: '16px', 
+        <div style=
+          display: 'flex',
+          gap: '16px',
           flexWrap: 'wrap',
           marginBottom: '20px'
         >
@@ -172,7 +166,7 @@ export default function Home() {
                   borderRadius: '8px',
                   border: selectedCategory === category ? '3px solid #FF1493' : '1px solid #ddd',
                   background: imageUrl 
-                    ? `linear-gradient(rgba(255,255,255,0.3), rgba(255,255,255,0.3)), url(${imageUrl}) center/cover`
+                    ? `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${imageUrl}) center/cover`
                     : selectedCategory === category ? '#FF1493' : 'white',
                   color: selectedCategory === category && !imageUrl ? 'white' : '#fff',
                   cursor: 'pointer',
@@ -184,7 +178,7 @@ export default function Home() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  textShadow: imageUrl ? '0 2px 4px rgba(0,0,0,0.7)' : 'none',
+                  textShadow: imageUrl ? '0 2px 4px rgba(0,0,0,0.8)' : 'none',
                   position: 'relative',
                   overflow: 'hidden'
                 }}
@@ -196,8 +190,8 @@ export default function Home() {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    background: selectedCategory === category 
-                      ? 'rgba(255,20,147,0.4)' 
+                    background: selectedCategory === category
+                      ? 'rgba(255,20,147,0.4)'
                       : 'rgba(0,0,0,0.3)',
                     transition: 'all 0.2s'
                    />
@@ -214,9 +208,9 @@ export default function Home() {
       {/* 人物セクション */}
       {filteredPeople.length > 0 && (
         <section style= marginBottom: '60px' >
-          <h2 style= 
-            fontSize: '28px', 
-            fontWeight: 'bold', 
+          <h2 style=
+            fontSize: '28px',
+            fontWeight: 'bold',
             marginBottom: '24px',
             borderBottom: '3px solid #FF1493',
             paddingBottom: '8px',
@@ -224,8 +218,8 @@ export default function Home() {
           >
             👤 人物
           </h2>
-          <div style= 
-            display: 'grid', 
+          <div style=
+            display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
             gap: '24px'
           >
@@ -269,8 +263,8 @@ export default function Home() {
                       }} />
                     )}
                     <div style= padding: '16px' >
-                      <h3 style= 
-                        fontSize: '18px', 
+                      <h3 style=
+                        fontSize: '18px',
                         fontWeight: 'bold',
                         marginBottom: '8px',
                         color: '#1a1a1a'
@@ -308,9 +302,9 @@ export default function Home() {
       {/* コンテンツセクション */}
       {publishedContents.length > 0 && (
         <section>
-          <h2 style= 
-            fontSize: '28px', 
-            fontWeight: 'bold', 
+          <h2 style=
+            fontSize: '28px',
+            fontWeight: 'bold',
             marginBottom: '24px',
             borderBottom: '3px solid #FF1493',
             paddingBottom: '8px',
@@ -318,8 +312,8 @@ export default function Home() {
           >
             📝 コンテンツ
           </h2>
-          <div style= 
-            display: 'grid', 
+          <div style=
+            display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
             gap: '24px'
           >
@@ -363,8 +357,8 @@ export default function Home() {
                       }} />
                     )}
                     <div style= padding: '16px' >
-                      <h3 style= 
-                        fontSize: '18px', 
+                      <h3 style=
+                        fontSize: '18px',
                         fontWeight: 'bold',
                         marginBottom: '8px',
                         color: '#1a1a1a'
@@ -399,10 +393,9 @@ export default function Home() {
         </section>
       )}
 
-      {/* 該当なしメッセージ */}
       {filteredPeople.length === 0 && publishedContents.length === 0 && (
-        <div style= 
-          textAlign: 'center', 
+        <div style=
+          textAlign: 'center',
           padding: '60px 20px',
           color: '#999',
           fontSize: '16px'

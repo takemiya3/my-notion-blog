@@ -7,30 +7,26 @@ import Loading from '@/components/Loading';
 
 type Person = any;
 type Content = any;
-type Genre = any;
 type SortOption = 'newest' | 'popular' | 'sales' | 'name';
 
 export default function Home() {
   const [people, setPeople] = useState<Person[]>([]);
   const [contents, setContents] = useState<Content[]>([]);
-  const [genres, setGenres] = useState<Genre[]>([]);
 
   const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
   const [filteredContents, setFilteredContents] = useState<Content[]>([]);
 
   const [selectedCategory, setSelectedCategory] = useState<string>('全て');
-  const [selectedGenre, setSelectedGenre] = useState<string>('全て');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [contentSort, setContentSort] = useState<SortOption>('newest');
   const [peopleSort, setPeopleSort] = useState<SortOption>('name');
   const [loading, setLoading] = useState(true);
 
-  // 🔥 NotionからPeopleとContents両方からカテゴリを抽出
+  // カテゴリ一覧を抽出（PeopleとContents両方から）
   const categories = useMemo(() => {
     const categorySet = new Set<string>();
     
-    // 人物マスタからカテゴリを抽出
     people.forEach((person: Person) => {
       const personCategories = person.properties['カテゴリ']?.multi_select || [];
       personCategories.forEach((cat: any) => {
@@ -38,7 +34,6 @@ export default function Home() {
       });
     });
     
-    // コンテンツからもカテゴリを抽出
     contents.forEach((content: Content) => {
       const contentCategories = content.properties['カテゴリ']?.multi_select || [];
       contentCategories.forEach((cat: any) => {
@@ -46,24 +41,21 @@ export default function Home() {
       });
     });
     
-    return ['全て', ...Array.from(categorySet).sort()];
+    return Array.from(categorySet).sort();
   }, [people, contents]);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [peopleRes, contentsRes, genresRes] = await Promise.all([
+        const [peopleRes, contentsRes] = await Promise.all([
           fetch('/api/people'),
           fetch('/api/contents'),
-          fetch('/api/genres'),
         ]);
         const peopleData = await peopleRes.json();
         const contentsData = await contentsRes.json();
-        const genresData = await genresRes.json();
 
         setPeople(peopleData);
         setContents(contentsData);
-        setGenres(genresData);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -74,8 +66,8 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    filterAndSortData(selectedCategory, selectedGenre, searchQuery, peopleSort, contentSort);
-  }, [selectedCategory, selectedGenre, searchQuery, peopleSort, contentSort, people, contents]);
+    filterAndSortData(selectedCategory, searchQuery, peopleSort, contentSort);
+  }, [selectedCategory, searchQuery, peopleSort, contentSort, people, contents]);
 
   const sortPeople = (peopleList: Person[], sortOption: SortOption): Person[] => {
     const sorted = [...peopleList];
@@ -131,7 +123,6 @@ export default function Home() {
 
   const filterAndSortData = (
     category: string,
-    genre: string,
     query: string,
     peopleSortOption: SortOption,
     contentSortOption: SortOption
@@ -148,18 +139,6 @@ export default function Home() {
       filteredC = filteredC.filter((content: Content) => {
         const contentCategories = content.properties['カテゴリ']?.multi_select || [];
         return contentCategories.some((cat: any) => cat.name === category);
-      });
-    }
-
-    // ジャンルで絞り込み
-    if (genre !== '全て') {
-      filteredP = filteredP.filter((person: Person) => {
-        const personGenre = person.properties['ジャンル']?.select?.name || '';
-        return personGenre === genre;
-      });
-      filteredC = filteredC.filter((content: Content) => {
-        const contentGenre = content.properties['ジャンル']?.select?.name || '';
-        return contentGenre === genre;
       });
     }
 
@@ -189,11 +168,7 @@ export default function Home() {
 
   const handleCategoryClick = (category: string) => {
     setSelectedCategory(category);
-  };
-
-  const handleGenreClick = (genre: string) => {
-    setSelectedGenre(genre);
-    // ジャンルをクリックしたら人物一覧までスクロール
+    // カテゴリをクリックしたら人物一覧までスクロール
     setTimeout(() => {
       document.getElementById('people')?.scrollIntoView({
         behavior: 'smooth',
@@ -210,38 +185,20 @@ export default function Home() {
     setSearchQuery('');
   };
 
-  const getCategoryColor = (category: string, isSelected: boolean) => {
-    const colors: { [key: string]: { bg: string; hover: string; selected: string } } = {
-      '全て': { bg: 'bg-gray-500', hover: 'hover:bg-gray-600', selected: 'bg-gray-600' },
-      '女優': { bg: 'bg-pink-500', hover: 'hover:bg-pink-600', selected: 'bg-pink-600' },
-      '素人系': { bg: 'bg-gray-400', hover: 'hover:bg-gray-500', selected: 'bg-gray-500' },
-      'アイドル系': { bg: 'bg-blue-500', hover: 'hover:bg-blue-600', selected: 'bg-blue-600' },
-      '10代': { bg: 'bg-red-500', hover: 'hover:bg-red-600', selected: 'bg-red-600' },
-      '20代': { bg: 'bg-pink-500', hover: 'hover:bg-pink-600', selected: 'bg-pink-600' },
-      '30代': { bg: 'bg-green-500', hover: 'hover:bg-green-600', selected: 'bg-green-600' },
-      '40代': { bg: 'bg-yellow-500', hover: 'hover:bg-yellow-600', selected: 'bg-yellow-600' },
-      'ロリ': { bg: 'bg-purple-500', hover: 'hover:bg-purple-600', selected: 'bg-purple-600' },
-      '本物': { bg: 'bg-indigo-500', hover: 'hover:bg-indigo-600', selected: 'bg-indigo-600' },
-      'モデル': { bg: 'bg-purple-500', hover: 'hover:bg-purple-600', selected: 'bg-purple-600' },
-      'グラビア': { bg: 'bg-orange-500', hover: 'hover:bg-orange-600', selected: 'bg-orange-600' },
-      'アイドル': { bg: 'bg-yellow-500', hover: 'hover:bg-yellow-600', selected: 'bg-yellow-600' },
-      'タレント': { bg: 'bg-blue-500', hover: 'hover:bg-blue-600', selected: 'bg-blue-600' },
-      // コンテンツ用のカテゴリも追加
-      '美少女': { bg: 'bg-pink-400', hover: 'hover:bg-pink-500', selected: 'bg-pink-500' },
-      'ブルマ': { bg: 'bg-blue-400', hover: 'hover:bg-blue-500', selected: 'bg-blue-500' },
-      'スクール水着': { bg: 'bg-cyan-500', hover: 'hover:bg-cyan-600', selected: 'bg-cyan-600' },
-      '体操服': { bg: 'bg-red-400', hover: 'hover:bg-red-500', selected: 'bg-red-500' },
-      'ブレザー': { bg: 'bg-indigo-400', hover: 'hover:bg-indigo-500', selected: 'bg-indigo-500' },
-      'セーラー服': { bg: 'bg-purple-400', hover: 'hover:bg-purple-500', selected: 'bg-purple-500' },
-      '制服': { bg: 'bg-gray-600', hover: 'hover:bg-gray-700', selected: 'bg-gray-700' },
-      '輪姦': { bg: 'bg-red-600', hover: 'hover:bg-red-700', selected: 'bg-red-700' },
-      'レイプ': { bg: 'bg-red-700', hover: 'hover:bg-red-800', selected: 'bg-red-800' },
-      'ハード': { bg: 'bg-orange-600', hover: 'hover:bg-orange-700', selected: 'bg-orange-700' },
+  // カテゴリごとの画像マッピング（デフォルト画像）
+  const getCategoryImage = (category: string) => {
+    // ここに各カテゴリのデフォルト画像URLを設定できます
+    const images: { [key: string]: string } = {
+      '制服': '',
+      'セーラー服': '',
+      'ブレザー': '',
+      '体操服': '',
+      'スクール水着': '',
+      'ブルマ': '',
+      '美少女': '',
+      // 必要に応じて追加
     };
-    const color = colors[category] || colors['全て'];
-    return isSelected
-      ? `${color.selected} shadow-lg scale-105`
-      : `${color.bg} ${color.hover}`;
+    return images[category] || '';
   };
 
   if (loading) {
@@ -284,31 +241,15 @@ export default function Home() {
             )}
           </div>
 
-          {/* カテゴリボタン */}
-          <div className="flex justify-center gap-4 mb-8 flex-wrap">
-            {categories.map((category) => {
-              const isSelected = selectedCategory === category;
-              return (
-                <button
-                  key={category}
-                  onClick={() => handleCategoryClick(category)}
-                  className={`px-6 py-2 rounded-full text-white transition-all ${getCategoryColor(category, isSelected)}`}
-                >
-                  {category}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* ジャンル別検索（画像付き） */}
+          {/* カテゴリ別検索（画像付き） */}
           <section className="mb-12">
-            <h2 className="text-3xl font-bold text-center mb-6 text-black">ジャンルから探す</h2>
+            <h2 className="text-3xl font-bold text-center mb-6 text-black">カテゴリから探す</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {/* 「全て」ボタン */}
               <button
-                onClick={() => handleGenreClick('全て')}
+                onClick={() => handleCategoryClick('全て')}
                 className={`relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all ${
-                  selectedGenre === '全て' ? 'ring-4 ring-pink-500 scale-105' : ''
+                  selectedCategory === '全て' ? 'ring-4 ring-pink-500 scale-105' : ''
                 }`}
               >
                 <div className="w-full h-32 bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center">
@@ -316,42 +257,40 @@ export default function Home() {
                 </div>
               </button>
 
-              {/* Notionから取得したジャンル */}
-              {genres.map((genre: any) => {
-                const genreName = genre.properties['ジャンル名']?.title[0]?.plain_text || '';
-                const genreImage = genre.properties['イメージ画像']?.files[0]?.file?.url ||
-                  genre.properties['イメージ画像']?.files[0]?.external?.url || '';
-                const isSelected = selectedGenre === genreName;
+              {/* カテゴリボタン */}
+              {categories.map((category) => {
+                const categoryImage = getCategoryImage(category);
+                const isSelected = selectedCategory === category;
 
                 return (
                   <button
-                    key={genre.id}
-                    onClick={() => handleGenreClick(genreName)}
+                    key={category}
+                    onClick={() => handleCategoryClick(category)}
                     className={`relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all ${
                       isSelected ? 'ring-4 ring-pink-500 scale-105' : ''
                     }`}
                   >
-                    {genreImage ? (
+                    {categoryImage ? (
                       <img
-                        src={genreImage}
-                        alt={genreName}
+                        src={categoryImage}
+                        alt={category}
                         className="w-full h-32 object-cover"
                       />
                     ) : (
-                      <div className="w-full h-32 bg-gray-300 flex items-center justify-center">
-                        <span className="text-gray-600">画像なし</span>
+                      <div className="w-full h-32 bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center">
+                        <span className="text-white font-bold text-xl">{category}</span>
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end justify-center pb-3">
-                      <span className="text-white font-bold text-lg">{genreName}</span>
+                      <span className="text-white font-bold text-lg">{category}</span>
                     </div>
                   </button>
                 );
               })}
             </div>
-            {selectedGenre !== '全て' && (
+            {selectedCategory !== '全て' && (
               <p className="text-center text-black mt-4">
-                ジャンル「{selectedGenre}」で絞り込み中
+                カテゴリ「{selectedCategory}」で絞り込み中
               </p>
             )}
           </section>

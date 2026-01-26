@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import ReviewSection from '@/components/ReviewSection';
 import { Client } from '@notionhq/client';
 import type { Metadata } from 'next';
+import SampleImageGallery from './SampleImageGallery';  // ← 追加
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
@@ -56,7 +57,7 @@ async function getRelatedContents(category: string, genre: string, currentConten
 
     // カテゴリまたはジャンルでフィルタリング
     const categoryGenreFilters: any[] = [];
-    
+
     if (category) {
       categoryGenreFilters.push({
         property: 'カテゴリ',
@@ -186,6 +187,11 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
   const genre = properties['ジャンル']?.select?.name || '';
   const performerRelations = properties['出演者']?.relation || [];
 
+  // サンプル画像を取得 ← 追加
+  const sampleImages = properties['サンプル画像']?.files?.map(
+    (file: any) => file.file?.url || file.external?.url
+  ).filter(Boolean) || [];
+
   // 出演者情報を取得
   const performerIds = performerRelations.map((rel: any) => rel.id);
   const performers = await getPerformers(performerIds);
@@ -239,7 +245,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
       {/* 構造化データを追加 */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{__html: JSON.stringify(contentJsonLd)}} 
+        dangerouslySetInnerHTML={{__html: JSON.stringify(contentJsonLd)}}
       />
       <script
         type="application/ld+json"
@@ -270,6 +276,9 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
                     className="w-full md:w-96 h-auto object-cover rounded-lg shadow-md"
                     priority
                   />
+                  
+                  {/* サンプル画像ギャラリー ← 追加 */}
+                  <SampleImageGallery images={sampleImages} />
                 </div>
               )}
 

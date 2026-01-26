@@ -45,11 +45,9 @@ async function getPersonContents(personId: string) {
   }
 }
 
-// 関連する人気コンテンツを取得
 async function getRelatedContents(personCategories: string[], currentPersonId: string, limit: number = 10) {
   try {
     if (!personCategories || personCategories.length === 0) {
-      // カテゴリがない場合は、閲覧数順で人気コンテンツを返す
       const response = await notion.databases.query({
         database_id: process.env.NOTION_CONTENT_DB_ID!,
         filter: {
@@ -69,7 +67,6 @@ async function getRelatedContents(personCategories: string[], currentPersonId: s
       return response.results;
     }
 
-    // カテゴリが一致するコンテンツを取得
     const categoryFilters = personCategories.map(category => ({
       property: 'カテゴリ',
       select: {
@@ -108,7 +105,6 @@ async function getRelatedContents(personCategories: string[], currentPersonId: s
   }
 }
 
-// メタデータ生成関数
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const resolvedParams = await params;
   const person = await getPersonData(resolvedParams.id);
@@ -128,10 +124,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const categories = properties['カテゴリ']?.multi_select || [];
   const birthDate = properties['生年月日']?.date?.start || '';
 
-  // カテゴリを文字列化
   const categoryNames = categories.map((cat: any) => cat.name).join('、');
 
-  // descriptionを生成（説明文がない場合は自動生成）
   const metaDescription = description ||
     `${name}のプロフィール。${categoryNames}として活躍。${birthDate ? `生年月日：${birthDate}。` : ''}出演コンテンツ一覧、口コミ、評価などの詳細情報をご覧いただけます。`;
 
@@ -178,7 +172,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   const profileImage = properties['プロフィール画像']?.files[0]?.file?.url || properties['プロフィール画像']?.files[0]?.external?.url || '';
   const birthDate = properties['生年月日']?.date?.start || '';
   const description = properties['説明文']?.rich_text[0]?.plain_text || '';
-
+  const threeSizes = properties['スリーサイズ']?.rich_text[0]?.plain_text || '';
   const fanzaLink = properties['FANZAリンク']?.url || null;
 
   const categories = properties['カテゴリ']?.multi_select || [];
@@ -186,10 +180,8 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   const twitterUrl = properties['TwitterURL']?.url || '';
   const instagramUrl = properties['InstagramURL']?.url || '';
 
-  // 関連する人気コンテンツを取得
   const relatedContents = await getRelatedContents(categoryNames, resolvedParams.id, 10);
 
-  // 構造化データを生成
   const personJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Person',
@@ -206,7 +198,6 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
     ].filter(Boolean),
   };
 
-  // パンくずリストの構造化データ
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -229,14 +220,14 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   return (
     <>
       {/* 構造化データを追加 */}
-<script
-  type="application/ld+json"
-  dangerouslySetInnerHTML={{__html: JSON.stringify(personJsonLd)}}
-/>
-<script
-  type="application/ld+json"
-  dangerouslySetInnerHTML={{__html: JSON.stringify(breadcrumbJsonLd)}}
-/>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{__html: JSON.stringify(personJsonLd)}}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{__html: JSON.stringify(breadcrumbJsonLd)}}
+      />
 
       <Header />
       <div className="min-h-screen bg-gray-50 py-8">
@@ -283,8 +274,15 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
 
                 {/* 生年月日 */}
                 {birthDate && (
-                  <p className="text-gray-700 mb-4">
+                  <p className="text-gray-700 mb-2">
                     <span className="font-semibold">生年月日:</span> {birthDate}
+                  </p>
+                )}
+
+                {/* スリーサイズ */}
+                {threeSizes && (
+                  <p className="text-gray-700 mb-4">
+                    <span className="font-semibold">スリーサイズ:</span> {threeSizes}
                   </p>
                 )}
 

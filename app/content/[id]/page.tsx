@@ -6,7 +6,7 @@ import Footer from '@/components/Footer';
 import ReviewSection from '@/components/ReviewSection';
 import { Client } from '@notionhq/client';
 import type { Metadata } from 'next';
-import SampleImageGallery from './SampleImageGallery';  // ← 追加
+import SampleImageGallery from './SampleImageGallery';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
@@ -61,8 +61,8 @@ async function getRelatedContents(category: string, genre: string, currentConten
     if (category) {
       categoryGenreFilters.push({
         property: 'カテゴリ',
-        select: {
-          equals: category,
+        multi_select: {
+          contains: category,
         },
       });
     }
@@ -93,7 +93,7 @@ async function getRelatedContents(category: string, genre: string, currentConten
           direction: 'descending',
         },
       ],
-      page_size: limit + 1, // 自分自身を除外するため+1
+      page_size: limit + 1,
     });
 
     // 自分自身を除外
@@ -183,11 +183,11 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
   const views = properties['閲覧数']?.number || 0;
   const videoUrl = properties['動画URL']?.url || null;
   const categories = properties['カテゴリ']?.multi_select || [];
-  const category = properties['カテゴリ']?.select?.name || '';
+  const category = categories[0]?.name || '';
   const genre = properties['ジャンル']?.select?.name || '';
   const performerRelations = properties['出演者']?.relation || [];
 
-  // サンプル画像を取得 ← 追加
+  // サンプル画像を取得
   const sampleImages = properties['サンプル画像']?.files?.map(
     (file: any) => file.file?.url || file.external?.url
   ).filter(Boolean) || [];
@@ -276,8 +276,8 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
                     className="w-full md:w-96 h-auto object-cover rounded-lg shadow-md"
                     priority
                   />
-                  
-                  {/* サンプル画像ギャラリー ← 追加 */}
+
+                  {/* サンプル画像ギャラリー */}
                   <SampleImageGallery images={sampleImages} />
                 </div>
               )}
@@ -288,11 +288,11 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
 
                 {/* カテゴリタグ */}
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {category && (
-                    <span className="px-3 py-1 bg-purple-100 text-purple-600 rounded-full text-sm font-semibold">
-                      {category}
+                  {categories.map((cat: any) => (
+                    <span key={cat.name} className="px-3 py-1 bg-purple-100 text-purple-600 rounded-full text-sm font-semibold">
+                      {cat.name}
                     </span>
-                  )}
+                  ))}
                   {genre && (
                     <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm font-semibold">
                       {genre}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -18,11 +18,13 @@ export default function Home() {
   const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
   const [filteredContents, setFilteredContents] = useState<Content[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('全て');
-  const [selectedGenre, setSelectedGenre] = useState<string | null>(null); // ← 追加
+  const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [contentSort, setContentSort] = useState<SortOption>('newest');
   const [peopleSort, setPeopleSort] = useState<SortOption>('name');
   const [loading, setLoading] = useState(true);
+
+  const peopleListRef = useRef<HTMLElement>(null);
 
   const categories = ['全て', '女優', 'モデル', 'グラビア', 'アイドル', 'タレント'];
 
@@ -111,84 +113,78 @@ export default function Home() {
   };
 
   const filterAndSortData = (
-  category: string,
-  genre: string | null,
-  query: string,
-  peopleSortOption: SortOption,
-  contentSortOption: SortOption
-) => {
-  let filteredP = people;
-  let filteredC = contents;
+    category: string,
+    genre: string | null,
+    query: string,
+    peopleSortOption: SortOption,
+    contentSortOption: SortOption
+  ) => {
+    let filteredP = people;
+    let filteredC = contents;
 
-  // カテゴリフィルター
-  if (category !== '全て') {
-    filteredP = filteredP.filter((person: Person) => {
-      const personCategories = person.properties['カテゴリ']?.multi_select || [];
-      return personCategories.some((cat: any) => cat.name === category);
-    });
+    // カテゴリフィルター
+    if (category !== '全て') {
+      filteredP = filteredP.filter((person: Person) => {
+        const personCategories = person.properties['カテゴリ']?.multi_select || [];
+        return personCategories.some((cat: any) => cat.name === category);
+      });
 
-    filteredC = filteredC.filter((content: Content) => {
-      const contentCategories = content.properties['カテゴリ']?.multi_select || [];
-      return contentCategories.some((cat: any) => cat.name === category);
-    });
-  }
+      filteredC = filteredC.filter((content: Content) => {
+        const contentCategories = content.properties['カテゴリ']?.multi_select || [];
+        return contentCategories.some((cat: any) => cat.name === category);
+      });
+    }
 
-  // ジャンルフィルター（Multi-select対応に修正）
-  if (genre) {
-    filteredP = filteredP.filter((person: Person) => {
-      // Select形式（旧）とMulti-select形式（新）の両方に対応
-      const personGenreSelect = person.properties['ジャンル']?.select?.name || '';
-      const personGenreMulti = person.properties['ジャンル']?.multi_select || [];
-      
-      // Select形式の場合
-      if (personGenreSelect) {
-        return personGenreSelect === genre;
-      }
-      
-      // Multi-select形式の場合
-      return personGenreMulti.some((g: any) => g.name === genre);
-    });
+    // ジャンルフィルター（Multi-select対応）
+    if (genre) {
+      filteredP = filteredP.filter((person: Person) => {
+        const personGenreSelect = person.properties['ジャンル']?.select?.name || '';
+        const personGenreMulti = person.properties['ジャンル']?.multi_select || [];
 
-    filteredC = filteredC.filter((content: Content) => {
-      // Select形式（旧）とMulti-select形式（新）の両方に対応
-      const contentGenreSelect = content.properties['ジャンル']?.select?.name || '';
-      const contentGenreMulti = content.properties['ジャンル']?.multi_select || [];
-      
-      // Select形式の場合
-      if (contentGenreSelect) {
-        return contentGenreSelect === genre;
-      }
-      
-      // Multi-select形式の場合
-      return contentGenreMulti.some((g: any) => g.name === genre);
-    });
-  }
+        if (personGenreSelect) {
+          return personGenreSelect === genre;
+        }
 
-  // 検索フィルター
-  if (query.trim() !== '') {
-    const lowerQuery = query.toLowerCase();
+        return personGenreMulti.some((g: any) => g.name === genre);
+      });
 
-    filteredP = filteredP.filter((person: Person) => {
-      const name = person.properties['人名']?.title[0]?.plain_text || '';
-      const description = person.properties['説明文']?.rich_text[0]?.plain_text || '';
-      return name.toLowerCase().includes(lowerQuery) ||
-        description.toLowerCase().includes(lowerQuery);
-    });
+      filteredC = filteredC.filter((content: Content) => {
+        const contentGenreSelect = content.properties['ジャンル']?.select?.name || '';
+        const contentGenreMulti = content.properties['ジャンル']?.multi_select || [];
 
-    filteredC = filteredC.filter((content: Content) => {
-      const title = content.properties['タイトル']?.title[0]?.plain_text || '';
-      const description = content.properties['説明文']?.rich_text[0]?.plain_text || '';
-      return title.toLowerCase().includes(lowerQuery) ||
-        description.toLowerCase().includes(lowerQuery);
-    });
-  }
+        if (contentGenreSelect) {
+          return contentGenreSelect === genre;
+        }
 
-  filteredP = sortPeople(filteredP, peopleSortOption);
-  filteredC = sortContents(filteredC, contentSortOption);
+        return contentGenreMulti.some((g: any) => g.name === genre);
+      });
+    }
 
-  setFilteredPeople(filteredP);
-  setFilteredContents(filteredC);
-};
+    // 検索フィルター
+    if (query.trim() !== '') {
+      const lowerQuery = query.toLowerCase();
+
+      filteredP = filteredP.filter((person: Person) => {
+        const name = person.properties['人名']?.title[0]?.plain_text || '';
+        const description = person.properties['説明文']?.rich_text[0]?.plain_text || '';
+        return name.toLowerCase().includes(lowerQuery) ||
+          description.toLowerCase().includes(lowerQuery);
+      });
+
+      filteredC = filteredC.filter((content: Content) => {
+        const title = content.properties['タイトル']?.title[0]?.plain_text || '';
+        const description = content.properties['説明文']?.rich_text[0]?.plain_text || '';
+        return title.toLowerCase().includes(lowerQuery) ||
+          description.toLowerCase().includes(lowerQuery);
+      });
+    }
+
+    filteredP = sortPeople(filteredP, peopleSortOption);
+    filteredC = sortContents(filteredC, contentSortOption);
+
+    setFilteredPeople(filteredP);
+    setFilteredContents(filteredC);
+  };
 
   const handleCategoryClick = (category: string) => {
     setSelectedCategory(category);
@@ -196,6 +192,16 @@ export default function Home() {
 
   const handleGenreClick = (genreName: string) => {
     setSelectedGenre(selectedGenre === genreName ? null : genreName);
+
+    // 人物一覧までスムーススクロール
+    setTimeout(() => {
+      if (peopleListRef.current) {
+        peopleListRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    }, 100);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -263,62 +269,61 @@ export default function Home() {
           </div>
 
           {/* ジャンルボタン（画像付き） */}
-{genres.length > 0 && (
-  <div className="mb-8">
-    <h2 className="text-xl font-bold mb-4 text-black">📷 ジャンルで探す</h2>
-    <div className="flex justify-center gap-4 flex-wrap">
-      {genres.map((genre: Genre) => {
-        // プロパティ名を柔軟に取得
-        const genreName = 
-          genre.properties?.['ジャンル名']?.title?.[0]?.plain_text || 
-          genre.properties?.['Name']?.title?.[0]?.plain_text || 
-          genre.properties?.['名前']?.title?.[0]?.plain_text || 
-          '';
-        
-        const imageProperty = 
-          genre.properties?.['イメージ画像'] || 
-          genre.properties?.['Image'] || 
-          genre.properties?.['画像'] ||
-          genre.properties?.['サムネイル'];
-        
-        const genreImage = 
-          imageProperty?.files?.[0]?.file?.url || 
-          imageProperty?.files?.[0]?.external?.url || 
-          '';
+          {genres.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-bold mb-4 text-black">📷 ジャンルで探す</h2>
+              <div className="flex justify-center gap-4 flex-wrap">
+                {genres.map((genre: Genre) => {
+                  const genreName =
+                    genre.properties?.['ジャンル名']?.title?.[0]?.plain_text ||
+                    genre.properties?.['Name']?.title?.[0]?.plain_text ||
+                    genre.properties?.['名前']?.title?.[0]?.plain_text ||
+                    '';
 
-        const isSelected = selectedGenre === genreName;
+                  const imageProperty =
+                    genre.properties?.['イメージ画像'] ||
+                    genre.properties?.['Image'] ||
+                    genre.properties?.['画像'] ||
+                    genre.properties?.['サムネイル'];
 
-        if (!genreName) return null; // 名前がない場合はスキップ
+                  const genreImage =
+                    imageProperty?.files?.[0]?.file?.url ||
+                    imageProperty?.files?.[0]?.external?.url ||
+                    '';
 
-        return (
-          <button
-            key={genre.id}
-            onClick={() => handleGenreClick(genreName)}
-            className={`relative overflow-hidden rounded-lg shadow-md transition-all ${
-              isSelected ? 'ring-4 ring-pink-500 scale-105' : 'hover:scale-105 hover:shadow-lg'
-            }`}
-            style={{
-              width: '150px',
-              height: '100px',
-              backgroundImage: genreImage 
-                ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${genreImage})`
-                : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundColor: genreImage ? 'transparent' : '#000',
-            }}
-          >
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-white font-bold text-lg drop-shadow-lg">
-                {genreName}
-              </span>
+                  const isSelected = selectedGenre === genreName;
+
+                  if (!genreName) return null;
+
+                  return (
+                    <button
+                      key={genre.id}
+                      onClick={() => handleGenreClick(genreName)}
+                      className={`relative overflow-hidden rounded-lg shadow-md transition-all ${
+                        isSelected ? 'ring-4 ring-pink-500 scale-105' : 'hover:scale-105 hover:shadow-lg'
+                      }`}
+                      style={{
+                        width: '150px',
+                        height: '100px',
+                        backgroundImage: genreImage
+                          ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${genreImage})`
+                          : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundColor: genreImage ? 'transparent' : '#000',
+                      }}
+                    >
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-white font-bold text-lg drop-shadow-lg">
+                          {genreName}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </button>
-        );
-      })}
-    </div>
-  </div>
-)}
+          )}
 
           {/* カテゴリボタン */}
           <div className="mb-8">
@@ -340,7 +345,7 @@ export default function Home() {
           </div>
 
           {/* 人物一覧 */}
-          <section className="mb-12">
+          <section ref={peopleListRef} className="mb-12">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-black">
                 人物一覧 ({filteredPeople.length}件)

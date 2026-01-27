@@ -2,7 +2,7 @@ import { Client } from '@notionhq/client';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
-const UNIFORM_CATEGORY_DB_ID = '9f060f914aa546f58edb976359bccec2';
+const UNIFORM_CATEGORY_DB_ID = 'collection://96906ac8-2a35-4104-aad8-e59b8bf92dde';
 
 export interface UniformCategory {
   id: string;
@@ -46,39 +46,18 @@ export async function getUniformCategories(): Promise<UniformCategory[]> {
 
 /**
  * スラッグから特定の制服カテゴリを取得
+ * ⚠️ text型プロパティはNotion APIでフィルタできないため、全件取得後にJSでフィルタ
  */
 export async function getUniformCategoryBySlug(
   slug: string
 ): Promise<UniformCategory | null> {
-  const response = await notion.databases.query({
-    database_id: UNIFORM_CATEGORY_DB_ID,
-    filter: {
-      and: [
-        {
-          property: 'スラッグ',
-          rich_text: { equals: slug },
-        },
-        {
-          property: '公開ステータス',
-          checkbox: { equals: true },
-        },
-      ],
-    },
-  });
-
-  if (response.results.length === 0) return null;
-
-  const page: any = response.results[0];
-  return {
-    id: page.id,
-    name: page.properties['カテゴリ名'].title[0]?.plain_text || '',
-    slug: page.properties['スラッグ'].rich_text[0]?.plain_text || '',
-    description: page.properties['説明文'].rich_text[0]?.plain_text || '',
-    image: page.properties['カテゴリ画像'].files[0]?.file?.url || 
-           page.properties['カテゴリ画像'].files[0]?.external?.url || 
-           null,
-    order: page.properties['表示順'].number || 0,
-  };
+  // 全カテゴリを取得
+  const categories = await getUniformCategories();
+  
+  // JavaScriptでフィルタ
+  const category = categories.find(cat => cat.slug === slug);
+  
+  return category || null;
 }
 
 /**

@@ -245,6 +245,19 @@ export default function Home() {
     return colorMap[color] || 'bg-gray-500';
   };
 
+  // 閲覧数カウント関数
+  const handleContentClick = async (contentId: string) => {
+    try {
+      await fetch('/api/increment-view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageId: contentId }),
+      });
+    } catch (error) {
+      console.error('View count error:', error);
+    }
+  };
+
   if (loading) {
     return <Loading />;
   }
@@ -288,8 +301,8 @@ export default function Home() {
           {/* ジャンルボタン（画像付き） */}
           {genres.length > 0 && (
             <div className="mb-8">
-              <h2 className="text-xl font-bold mb-4 text-black">📷 ジャンルで探す</h2>
-              <div className="flex justify-center gap-4 flex-wrap">
+              <h2 className="text-xl font-bold mb-4 text-black">ジャンルで探す</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:flex lg:justify-center gap-4 flex-wrap">
                 {genres.map((genre: Genre) => {
                   const genreName =
                     genre.properties?.['ジャンル名']?.title?.[0]?.plain_text ||
@@ -320,8 +333,8 @@ export default function Home() {
                         isSelected ? 'ring-4 ring-pink-500 scale-105' : 'hover:scale-105 hover:shadow-lg'
                       }`}
                       style={{
-                        width: '150px',
-                        height: '100px',
+                        width: '200px',
+                        height: '150px',
                         backgroundImage: genreImage
                           ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${genreImage})`
                           : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -346,7 +359,7 @@ export default function Home() {
           <div className="mb-8 flex justify-center items-center gap-4">
             <button
               onClick={() => setShowDetailSearchModal(true)}
-              className="px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2"
+              className="px-8 py-3 bg-pink-500 text-white font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2"
             >
               <span className="text-xl">🔎</span>
               <span>詳細検索</span>
@@ -439,7 +452,7 @@ export default function Home() {
                   </button>
                   <button
                     onClick={() => setShowDetailSearchModal(false)}
-                    className="px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold rounded-lg hover:shadow-lg transition-all"
+                    className="px-8 py-3 bg-pink-500 text-white font-bold rounded-lg hover:shadow-lg transition-all"
                   >
                     検索する
                   </button>
@@ -462,7 +475,7 @@ export default function Home() {
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500"
                 >
                   <option value="name">名前順</option>
-                  <option value="newest">生年月日（新しい順）</option>
+                  <option value="newest">生年月日(新しい順)</option>
                 </select>
               </div>
             </div>
@@ -475,7 +488,7 @@ export default function Home() {
                   const name = person.properties['人名']?.title[0]?.plain_text || '名前なし';
                   const profileImage = person.properties['プロフィール画像']?.files[0]?.file?.url || person.properties['プロフィール画像']?.files[0]?.external?.url || '';
                   const personCategories = person.properties['カテゴリ']?.multi_select || [];
-                  const fanzaLink = person.properties['FANZAリンク']?.url || ''; // ← FANZAリンク取得
+                  const fanzaLink = person.properties['FANZAリンク']?.url || '';
 
                   return (
                     <div
@@ -502,8 +515,7 @@ export default function Home() {
                           ))}
                         </div>
                       </Link>
-                      
-                      {/* FANZAリンクボタン */}
+
                       {fanzaLink && (
                         <a
                           href={fanzaLink}
@@ -536,7 +548,7 @@ export default function Home() {
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500"
                 >
                   <option value="newest">新着順</option>
-                  <option value="popular">人気順（閲覧数）</option>
+                  <option value="popular">人気順(閲覧数)</option>
                   <option value="sales">売上順</option>
                   <option value="name">タイトル順</option>
                 </select>
@@ -556,6 +568,7 @@ export default function Home() {
                     <Link
                       key={contentId}
                       href={`/content/${contentId}`}
+                      onClick={() => handleContentClick(contentId)}
                       className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden"
                     >
                       {thumbnail && (

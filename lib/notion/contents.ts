@@ -25,7 +25,7 @@ export async function getContentsByUniformCategory(
     filter: {
       and: [
         {
-          property: '制服カテゴリ',
+          property: '制服カテゴリ 1',
           relation: { contains: categoryId },
         },
         {

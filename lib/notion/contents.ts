@@ -1,3 +1,9 @@
+import { Client } from '@notionhq/client';
+
+const notion = new Client({ auth: process.env.NOTION_API_KEY });
+
+const CONTENT_DB_ID = 'collection://c3dd4ccd-54d4-43f7-8460-987b6bcf3c9e';
+
 export interface Content {
   id: string;
   title: string;

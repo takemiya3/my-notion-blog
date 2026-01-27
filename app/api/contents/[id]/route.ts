@@ -5,10 +5,10 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params; // ← Promise を await で解決
 
     const response = await notion.pages.retrieve({ page_id: id });
     

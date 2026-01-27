@@ -1,93 +1,135 @@
-import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { 
-  getUniformCategoryBySlug, 
-  getAllUniformCategorySlugs 
-} from '@/lib/notion/uniformCategories';
-import { getContentsByUniformCategory } from '@/lib/notion/contents';
-import ContentCard from '@/components/ContentCard';
 import Link from 'next/link';
 
-interface PageProps {
-  params: { slug: string };
+const NOTION_API_KEY = process.env.NOTION_API_KEY;
+const NOTION_UNIFORM_CATEGORY_DB_ID = process.env.NOTION_UNIFORM_CATEGORY_DB_ID;
+const NOTION_CONTENT_DB_ID = process.env.NOTION_CONTENT_DB_ID;
+
+interface UniformCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  contentIds: string[];
 }
 
-export async function generateStaticParams() {
-  const slugs = await getAllUniformCategorySlugs();
-  return slugs.map((slug) => ({ slug }));
+interface Content {
+  id: string;
+  title: string;
+  imageUrl?: string;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const category = await getUniformCategoryBySlug(params.slug);
-  
-  if (!category) {
-    return {
-      title: 'ページが見つかりません',
-    };
-  }
+async function getUniformCategoryBySlug(slug: string): Promise<UniformCategory | null> {
+  const { Client } = require('@notionhq/client');
+  const notion = new Client({ auth: NOTION_API_KEY });
+
+  const response = await notion.databases.query({
+    database_id: NOTION_UNIFORM_CATEGORY_DB_ID,
+    filter: {
+      property: 'スラッグ',
+      rich_text: {
+        equals: slug,
+      },
+    },
+  });
+
+  if (response.results.length === 0) return null;
+
+  const page = response.results[0] as any;
+  const properties = page.properties;
 
   return {
-    title: `${category.name} | 放課後制服動画ナビ`,
-    description: category.description || `${category.name}のコンテンツ一覧`,
+    id: page.id,
+    name: properties['カテゴリ名']?.title?.[0]?.plain_text || '',
+    slug: properties['スラッグ']?.rich_text?.[0]?.plain_text || '',
+    description: properties['説明文']?.rich_text?.[0]?.plain_text || '',
+    contentIds: properties['コンテンツ']?.relation?.map((r: any) => r.id) || [],
   };
 }
 
-export const revalidate = 3600; // 1時間ごとに再生成
+async function getContentsByIds(ids: string[]): Promise<Content[]> {
+  if (ids.length === 0) return [];
 
-export default async function UniformCategoryPage({ params }: PageProps) {
-  const category = await getUniformCategoryBySlug(params.slug);
-  
+  const { Client } = require('@notionhq/client');
+  const notion = new Client({ auth: NOTION_API_KEY });
+
+  const contents: Content[] = [];
+
+  for (const id of ids) {
+    try {
+      const page = await notion.pages.retrieve({ page_id: id });
+      const properties = (page as any).properties;
+
+      contents.push({
+        id: page.id,
+        title: properties['タイトル']?.title?.[0]?.plain_text || '',
+        imageUrl: properties['サムネイル画像']?.files?.[0]?.file?.url || properties['サムネイル画像']?.files?.[0]?.external?.url,
+      });
+    } catch (error) {
+      console.error(`Failed to fetch content ${id}:`, error);
+    }
+  }
+
+  return contents;
+}
+
+export default async function UniformCategoryPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const category = await getUniformCategoryBySlug(slug);
+
   if (!category) {
     notFound();
   }
 
-  const contents = await getContentsByUniformCategory(category.id);
+  const contents = await getContentsByIds(category.contentIds);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* パンくずリスト */}
-      <nav className="mb-6 text-sm text-gray-600">
-        <Link href="/" className="hover:text-blue-600">ホーム</Link>
-        <span className="mx-2">/</span>
-        <Link href="/uniform" className="hover:text-blue-600">制服検索</Link>
-        <span className="mx-2">/</span>
-        <span className="text-gray-900">{category.name}</span>
-      </nav>
-
-      {/* ヘッダー */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-4">{category.name}</h1>
-        {category.description && (
-          <p className="text-gray-600">{category.description}</p>
-        )}
-        <p className="text-sm text-gray-500 mt-2">
-          {contents.length}件のコンテンツ
-        </p>
-      </div>
-
-      {/* コンテンツグリッド */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 
-                      gap-6">
-        {contents.map((content) => (
-          <ContentCard key={content.id} content={content} />
-        ))}
-      </div>
-
-      {contents.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
-          現在、このカテゴリにはコンテンツがありません。
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* ヘッダー */}
+        <div className="mb-8">
+          <Link href="/" className="text-pink-600 hover:text-pink-700 mb-4 inline-block">
+            ← ホームに戻る
+          </Link>
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">{category.name}</h1>
+          <p className="text-gray-600 text-lg">{category.description}</p>
         </div>
-      )}
 
-      {/* 戻るリンク */}
-      <div className="mt-12 text-center">
-        <Link 
-          href="/uniform"
-          className="inline-block bg-gray-200 text-gray-700 px-6 py-3 rounded 
-                     hover:bg-gray-300 transition-colors"
-        >
-          ← 制服検索に戻る
-        </Link>
+        {/* コンテンツ一覧 */}
+        {contents.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">このカテゴリにはまだコンテンツがありません</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {contents.map((content) => (
+              <Link
+                key={content.id}
+                href={`/content/${content.id}`}
+                className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden"
+              >
+                {content.imageUrl ? (
+                  <img
+                    src={content.imageUrl}
+                    alt={content.title}
+                    className="w-full h-48 object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-48 bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
+                    <span className="text-4xl">🎽</span>
+                  </div>
+                )}
+                <div className="p-4">
+                  <h3 className="font-semibold text-gray-800 line-clamp-2">{content.title}</h3>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

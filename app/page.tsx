@@ -465,7 +465,7 @@ export default function Home() {
           <section ref={peopleListRef} className="mb-12">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-black">
-                人物一覧 ({filteredPeople.length}件)
+                女優一覧 ({filteredPeople.length}件)
               </h2>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-black">並び替え:</span>

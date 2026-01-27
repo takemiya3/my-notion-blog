@@ -20,7 +20,6 @@ export default function Home() {
   const [contents, setContents] = useState<Content[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [uniformCategories, setUniformCategories] = useState<any[]>([]);
   const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
   const [filteredContents, setFilteredContents] = useState<Content[]>([]);
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
@@ -37,25 +36,22 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [peopleRes, contentsRes, genresRes, categoriesRes, uniformCategoriesRes] = await Promise.all([
+        const [peopleRes, contentsRes, genresRes, categoriesRes] = await Promise.all([
           fetch('/api/people'),
           fetch('/api/contents'),
           fetch('/api/genres'),
           fetch('/api/categories'),
-          fetch('/api/uniform-categories'),
         ]);
 
         const peopleData = await peopleRes.json();
         const contentsData = await contentsRes.json();
         const genresData = await genresRes.json();
         const categoriesData = await categoriesRes.json();
-        const uniformCategoriesData = await uniformCategoriesRes.json();
 
         setPeople(peopleData);
         setContents(contentsData);
         setGenres(genresData);
         setCategories(categoriesData);
-        setUniformCategories(uniformCategoriesData);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -302,46 +298,6 @@ export default function Home() {
             )}
           </div>
 
-          {/* 制服カテゴリ(画像付き) */}
-          {uniformCategories.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-xl font-bold mb-4 text-black">制服カテゴリで探す</h2>
-              <div className="flex justify-center gap-4 flex-wrap">
-                {uniformCategories.map((category: any) => {
-                  const categoryName = category.properties?.['カテゴリ名']?.title?.[0]?.plain_text || '';
-                  const slug = category.properties?.['スラッグ']?.rich_text?.[0]?.plain_text || '';
-                  const imageProperty = category.properties?.['カテゴリ画像'];
-                  const categoryImage = imageProperty?.files?.[0]?.file?.url || imageProperty?.files?.[0]?.external?.url || '';
-
-                  if (!categoryName || !slug) return null;
-
-                  return (
-                    <Link
-                      key={category.id}
-                      href={`/uniform/${slug}`}
-                      className="relative overflow-hidden rounded-lg shadow-md transition-all hover:scale-105 hover:shadow-lg"
-                      style={{
-                        width: '200px',
-                        height: '150px',
-                        backgroundImage: categoryImage
-                          ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${categoryImage})`
-                          : 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                      }}
-                    >
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-white font-bold text-lg drop-shadow-lg">
-                          {categoryName}
-                        </span>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           {/* ジャンルボタン(画像付き) */}
           {genres.length > 0 && (
             <div className="mb-8">
@@ -509,7 +465,7 @@ export default function Home() {
           <section ref={peopleListRef} className="mb-12">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-black">
-                人物一覧 ({filteredPeople.length}件)
+                女優一覧 ({filteredPeople.length}件)
               </h2>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-black">並び替え:</span>

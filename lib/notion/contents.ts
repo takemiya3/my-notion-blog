@@ -2,7 +2,7 @@ import { Client } from '@notionhq/client';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
-const CONTENT_DB_ID = 'c3dd4ccd54d443f78460987b6bcf3c9e';
+const CONTENT_DB_ID = 'f0c63b2acda54155a4110980219c6a2f';
 
 export interface Content {
   id: string;

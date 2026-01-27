@@ -17,8 +17,9 @@ export default function Home() {
   const [genres, setGenres] = useState<Genre[]>([]);
   const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
   const [filteredContents, setFilteredContents] = useState<Content[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('全て');
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]); // ← 複数選択可能に変更
+  const [showDetailSearch, setShowDetailSearch] = useState(false); // ← 詳細検索の表示/非表示
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [contentSort, setContentSort] = useState<SortOption>('newest');
   const [peopleSort, setPeopleSort] = useState<SortOption>('name');
@@ -26,7 +27,14 @@ export default function Home() {
 
   const peopleListRef = useRef<HTMLElement>(null);
 
-  const categories = ['全て', '女優', 'モデル', 'グラビア', 'アイドル', 'タレント'];
+  // 人物マスタのカテゴリ一覧
+  const allCategories = [
+    '女優', '素人系', 'アイドル系',
+    '10代', '20代', '30代', '40代',
+    'ロリ', '本物', 'メンヘラ',
+    'かわいい', '美人', '痴女',
+    '妹', 'お姉さん', '巨乳', '美乳'
+  ];
 
   useEffect(() => {
     async function fetchData() {
@@ -55,8 +63,8 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    filterAndSortData(selectedCategory, selectedGenre, searchQuery, peopleSort, contentSort);
-  }, [selectedCategory, selectedGenre, searchQuery, peopleSort, contentSort, people, contents]);
+    filterAndSortData(selectedCategories, selectedGenre, searchQuery, peopleSort, contentSort);
+  }, [selectedCategories, selectedGenre, searchQuery, peopleSort, contentSort, people, contents]);
 
   const sortPeople = (peopleList: Person[], sortOption: SortOption): Person[] => {
     const sorted = [...peopleList];
@@ -113,7 +121,7 @@ export default function Home() {
   };
 
   const filterAndSortData = (
-    category: string,
+    categories: string[],
     genre: string | null,
     query: string,
     peopleSortOption: SortOption,
@@ -122,16 +130,20 @@ export default function Home() {
     let filteredP = people;
     let filteredC = contents;
 
-    // カテゴリフィルター
-    if (category !== '全て') {
+    // カテゴリフィルター（複数選択対応）
+    if (categories.length > 0) {
       filteredP = filteredP.filter((person: Person) => {
         const personCategories = person.properties['カテゴリ']?.multi_select || [];
-        return personCategories.some((cat: any) => cat.name === category);
+        return categories.every(selectedCat => 
+          personCategories.some((cat: any) => cat.name === selectedCat)
+        );
       });
 
       filteredC = filteredC.filter((content: Content) => {
         const contentCategories = content.properties['カテゴリ']?.multi_select || [];
-        return contentCategories.some((cat: any) => cat.name === category);
+        return categories.every(selectedCat => 
+          contentCategories.some((cat: any) => cat.name === selectedCat)
+        );
       });
     }
 
@@ -186,14 +198,17 @@ export default function Home() {
     setFilteredContents(filteredC);
   };
 
-  const handleCategoryClick = (category: string) => {
-    setSelectedCategory(category);
+  const handleCategoryToggle = (category: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
   };
 
   const handleGenreClick = (genreName: string) => {
     setSelectedGenre(selectedGenre === genreName ? null : genreName);
 
-    // 人物一覧までスムーススクロール
     setTimeout(() => {
       if (peopleListRef.current) {
         peopleListRef.current.scrollIntoView({
@@ -212,20 +227,33 @@ export default function Home() {
     setSearchQuery('');
   };
 
-  const getCategoryColor = (category: string, isSelected: boolean) => {
-    const colors: { [key: string]: { bg: string; hover: string; selected: string } } = {
-      '全て': { bg: 'bg-gray-500', hover: 'hover:bg-gray-600', selected: 'bg-gray-600' },
-      '女優': { bg: 'bg-pink-500', hover: 'hover:bg-pink-600', selected: 'bg-pink-600' },
-      'モデル': { bg: 'bg-purple-500', hover: 'hover:bg-purple-600', selected: 'bg-purple-600' },
-      'グラビア': { bg: 'bg-orange-500', hover: 'hover:bg-orange-600', selected: 'bg-orange-600' },
-      'アイドル': { bg: 'bg-yellow-500', hover: 'hover:bg-yellow-600', selected: 'bg-yellow-600' },
-      'タレント': { bg: 'bg-blue-500', hover: 'hover:bg-blue-600', selected: 'bg-blue-600' },
-    };
+  const clearAllFilters = () => {
+    setSelectedCategories([]);
+    setSelectedGenre(null);
+    setSearchQuery('');
+  };
 
-    const color = colors[category];
-    return isSelected
-      ? `${color.selected} shadow-lg scale-105`
-      : `${color.bg} ${color.hover}`;
+  const getCategoryColor = (category: string) => {
+    const colors: { [key: string]: string } = {
+      '女優': 'bg-orange-500',
+      '素人系': 'bg-gray-500',
+      'アイドル系': 'bg-blue-500',
+      '10代': 'bg-red-500',
+      '20代': 'bg-pink-500',
+      '30代': 'bg-green-500',
+      '40代': 'bg-yellow-500',
+      'ロリ': 'bg-orange-700',
+      '本物': 'bg-purple-500',
+      'メンヘラ': 'bg-gray-600',
+      'かわいい': 'bg-pink-400',
+      '美人': 'bg-blue-400',
+      '痴女': 'bg-blue-600',
+      '妹': 'bg-orange-400',
+      'お姉さん': 'bg-pink-600',
+      '巨乳': 'bg-orange-800',
+      '美乳': 'bg-gray-400',
+    };
+    return colors[category] || 'bg-gray-500';
   };
 
   if (loading) {
@@ -325,23 +353,53 @@ export default function Home() {
             </div>
           )}
 
-          {/* カテゴリボタン */}
+          {/* 詳細検索 */}
           <div className="mb-8">
-            <h2 className="text-xl font-bold mb-4 text-black">🏷️ カテゴリで探す</h2>
-            <div className="flex justify-center gap-4 flex-wrap">
-              {categories.map((category) => {
-                const isSelected = selectedCategory === category;
-                return (
-                  <button
-                    key={category}
-                    onClick={() => handleCategoryClick(category)}
-                    className={`px-6 py-2 rounded-full text-white transition-all ${getCategoryColor(category, isSelected)}`}
-                  >
-                    {category}
-                  </button>
-                );
-              })}
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-black">🔎 詳細検索</h2>
+              <button
+                onClick={() => setShowDetailSearch(!showDetailSearch)}
+                className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors"
+              >
+                {showDetailSearch ? '閉じる' : '開く'}
+              </button>
             </div>
+
+            {showDetailSearch && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <p className="text-sm text-gray-600">
+                    選択中: {selectedCategories.length}件
+                  </p>
+                  {(selectedCategories.length > 0 || selectedGenre || searchQuery) && (
+                    <button
+                      onClick={clearAllFilters}
+                      className="text-sm text-pink-500 hover:text-pink-700 underline"
+                    >
+                      すべてクリア
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {allCategories.map((category) => {
+                    const isSelected = selectedCategories.includes(category);
+                    return (
+                      <button
+                        key={category}
+                        onClick={() => handleCategoryToggle(category)}
+                        className={`px-4 py-2 rounded-full text-white text-sm transition-all ${
+                          isSelected
+                            ? `${getCategoryColor(category)} ring-2 ring-pink-500 scale-105`
+                            : `${getCategoryColor(category)} opacity-60 hover:opacity-100`
+                        }`}
+                      >
+                        {isSelected && '✓ '}{category}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 人物一覧 */}

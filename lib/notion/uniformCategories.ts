@@ -2,7 +2,7 @@ import { Client } from '@notionhq/client';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
-const UNIFORM_CATEGORY_DB_ID = 'collection://96906ac8-2a35-4104-aad8-e59b8bf92dde';
+const UNIFORM_CATEGORY_DB_ID = '9f060f914aa546f58edb976359bccec2';
 
 export interface UniformCategory {
   id: string;

@@ -245,42 +245,62 @@ export default function Home() {
           </div>
 
           {/* ジャンルボタン（画像付き） */}
-          {genres.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-xl font-bold mb-4 text-black">📷 ジャンルで探す</h2>
-              <div className="flex justify-center gap-4 flex-wrap">
-                {genres.map((genre: Genre) => {
-                  const genreName = genre.properties?.['ジャンル名']?.title?.[0]?.plain_text || '';
-                  const genreImage = genre.properties?.['イメージ画像']?.files?.[0]?.file?.url || 
-                                    genre.properties?.['イメージ画像']?.files?.[0]?.external?.url || '';
-                  const isSelected = selectedGenre === genreName;
+{genres.length > 0 && (
+  <div className="mb-8">
+    <h2 className="text-xl font-bold mb-4 text-black">📷 ジャンルで探す</h2>
+    <div className="flex justify-center gap-4 flex-wrap">
+      {genres.map((genre: Genre) => {
+        // プロパティ名を柔軟に取得
+        const genreName = 
+          genre.properties?.['ジャンル名']?.title?.[0]?.plain_text || 
+          genre.properties?.['Name']?.title?.[0]?.plain_text || 
+          genre.properties?.['名前']?.title?.[0]?.plain_text || 
+          '';
+        
+        const imageProperty = 
+          genre.properties?.['イメージ画像'] || 
+          genre.properties?.['Image'] || 
+          genre.properties?.['画像'] ||
+          genre.properties?.['サムネイル'];
+        
+        const genreImage = 
+          imageProperty?.files?.[0]?.file?.url || 
+          imageProperty?.files?.[0]?.external?.url || 
+          '';
 
-                  return (
-                    <button
-                      key={genre.id}
-                      onClick={() => handleGenreClick(genreName)}
-                      className={`relative overflow-hidden rounded-lg transition-all ${
-                        isSelected ? 'ring-4 ring-pink-500 scale-105' : 'hover:scale-105'
-                      }`}
-                      style={{
-                        width: '150px',
-                        height: '100px',
-                        backgroundImage: genreImage ? `url(${genreImage})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                      }}
-                    >
-                      <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                        <span className="text-white font-bold text-lg drop-shadow-lg">
-                          {genreName}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+        const isSelected = selectedGenre === genreName;
+
+        if (!genreName) return null; // 名前がない場合はスキップ
+
+        return (
+          <button
+            key={genre.id}
+            onClick={() => handleGenreClick(genreName)}
+            className={`relative overflow-hidden rounded-lg shadow-md transition-all ${
+              isSelected ? 'ring-4 ring-pink-500 scale-105' : 'hover:scale-105 hover:shadow-lg'
+            }`}
+            style={{
+              width: '150px',
+              height: '100px',
+              backgroundImage: genreImage 
+                ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${genreImage})`
+                : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundColor: genreImage ? 'transparent' : '#000',
+            }}
+          >
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-white font-bold text-lg drop-shadow-lg">
+                {genreName}
+              </span>
             </div>
-          )}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+)}
 
           {/* カテゴリボタン */}
           <div className="mb-8">

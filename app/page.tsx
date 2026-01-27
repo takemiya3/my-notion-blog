@@ -289,7 +289,7 @@ export default function Home() {
           {genres.length > 0 && (
             <div className="mb-8">
               <h2 className="text-xl font-bold mb-4 text-black">ジャンルで探す</h2>
-              <div className="flex justify-center gap-4 flex-wrap">
+              <div className="grid grid-cols-2 md:flex md:justify-center gap-4">
                 {genres.map((genre: Genre) => {
                   const genreName =
                     genre.properties?.['ジャンル名']?.title?.[0]?.plain_text ||

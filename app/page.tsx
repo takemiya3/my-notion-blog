@@ -277,7 +277,7 @@ export default function Home() {
                 value={searchQuery}
                 onChange={handleSearchChange}
                 placeholder="人物名やコンテンツを検索..."
-                className="w-full px-6 py-4 text-lg rounded-full border-2 border-gray-300 focus:border-pink-500 focus:outline-none shadow-md pl-12"
+                className="w-full px-6 py-4 text-lg rounded-full border-2 border-gray-300 focus:border-pink-500 focus:outline-none shadow-md pl-12 text-black"
               />
               {searchQuery && (
                 <button
@@ -472,7 +472,7 @@ export default function Home() {
                 <select
                   value={peopleSort}
                   onChange={(e) => setPeopleSort(e.target.value as SortOption)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500"
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500 text-black"
                 >
                   <option value="name">名前順</option>
                   <option value="newest">生年月日(新しい順)</option>
@@ -559,7 +559,7 @@ export default function Home() {
                 <select
                   value={contentSort}
                   onChange={(e) => setContentSort(e.target.value as SortOption)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500"
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500 text-black"
                 >
                   <option value="newest">新着順</option>
                   <option value="popular">人気順(閲覧数)</option>

@@ -9,17 +9,22 @@ import Loading from '@/components/Loading';
 type Person = any;
 type Content = any;
 type Genre = any;
+type Category = {
+  name: string;
+  color: string;
+};
 type SortOption = 'newest' | 'popular' | 'sales' | 'name';
 
 export default function Home() {
   const [people, setPeople] = useState<Person[]>([]);
   const [contents, setContents] = useState<Content[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]); // ← 動的に取得
   const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
   const [filteredContents, setFilteredContents] = useState<Content[]>([]);
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]); // ← 複数選択可能に変更
-  const [showDetailSearch, setShowDetailSearch] = useState(false); // ← 詳細検索の表示/非表示
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [showDetailSearchModal, setShowDetailSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [contentSort, setContentSort] = useState<SortOption>('newest');
   const [peopleSort, setPeopleSort] = useState<SortOption>('name');
@@ -27,31 +32,25 @@ export default function Home() {
 
   const peopleListRef = useRef<HTMLElement>(null);
 
-  // 人物マスタのカテゴリ一覧
-  const allCategories = [
-    '女優', '素人系', 'アイドル系',
-    '10代', '20代', '30代', '40代',
-    'ロリ', '本物', 'メンヘラ',
-    'かわいい', '美人', '痴女',
-    '妹', 'お姉さん', '巨乳', '美乳'
-  ];
-
   useEffect(() => {
     async function fetchData() {
       try {
-        const [peopleRes, contentsRes, genresRes] = await Promise.all([
+        const [peopleRes, contentsRes, genresRes, categoriesRes] = await Promise.all([
           fetch('/api/people'),
           fetch('/api/contents'),
           fetch('/api/genres'),
+          fetch('/api/categories'), // ← カテゴリを動的に取得
         ]);
 
         const peopleData = await peopleRes.json();
         const contentsData = await contentsRes.json();
         const genresData = await genresRes.json();
+        const categoriesData = await categoriesRes.json();
 
         setPeople(peopleData);
         setContents(contentsData);
         setGenres(genresData);
+        setCategories(categoriesData); // ← カテゴリをセット
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -130,24 +129,22 @@ export default function Home() {
     let filteredP = people;
     let filteredC = contents;
 
-    // カテゴリフィルター（複数選択対応）
     if (categories.length > 0) {
       filteredP = filteredP.filter((person: Person) => {
         const personCategories = person.properties['カテゴリ']?.multi_select || [];
-        return categories.every(selectedCat => 
+        return categories.every(selectedCat =>
           personCategories.some((cat: any) => cat.name === selectedCat)
         );
       });
 
       filteredC = filteredC.filter((content: Content) => {
         const contentCategories = content.properties['カテゴリ']?.multi_select || [];
-        return categories.every(selectedCat => 
+        return categories.every(selectedCat =>
           contentCategories.some((cat: any) => cat.name === selectedCat)
         );
       });
     }
 
-    // ジャンルフィルター（Multi-select対応）
     if (genre) {
       filteredP = filteredP.filter((person: Person) => {
         const personGenreSelect = person.properties['ジャンル']?.select?.name || '';
@@ -172,7 +169,6 @@ export default function Home() {
       });
     }
 
-    // 検索フィルター
     if (query.trim() !== '') {
       const lowerQuery = query.toLowerCase();
 
@@ -199,7 +195,7 @@ export default function Home() {
   };
 
   const handleCategoryToggle = (category: string) => {
-    setSelectedCategories(prev => 
+    setSelectedCategories(prev =>
       prev.includes(category)
         ? prev.filter(c => c !== category)
         : [...prev, category]
@@ -233,27 +229,20 @@ export default function Home() {
     setSearchQuery('');
   };
 
-  const getCategoryColor = (category: string) => {
-    const colors: { [key: string]: string } = {
-      '女優': 'bg-orange-500',
-      '素人系': 'bg-gray-500',
-      'アイドル系': 'bg-blue-500',
-      '10代': 'bg-red-500',
-      '20代': 'bg-pink-500',
-      '30代': 'bg-green-500',
-      '40代': 'bg-yellow-500',
-      'ロリ': 'bg-orange-700',
-      '本物': 'bg-purple-500',
-      'メンヘラ': 'bg-gray-600',
-      'かわいい': 'bg-pink-400',
-      '美人': 'bg-blue-400',
-      '痴女': 'bg-blue-600',
-      '妹': 'bg-orange-400',
-      'お姉さん': 'bg-pink-600',
-      '巨乳': 'bg-orange-800',
-      '美乳': 'bg-gray-400',
+  const getCategoryColor = (color: string) => {
+    const colorMap: { [key: string]: string } = {
+      'gray': 'bg-gray-500',
+      'brown': 'bg-orange-800',
+      'orange': 'bg-orange-500',
+      'yellow': 'bg-yellow-500',
+      'green': 'bg-green-500',
+      'blue': 'bg-blue-500',
+      'purple': 'bg-purple-500',
+      'pink': 'bg-pink-500',
+      'red': 'bg-red-500',
+      'default': 'bg-gray-500',
     };
-    return colors[category] || 'bg-gray-500';
+    return colorMap[color] || 'bg-gray-500';
   };
 
   if (loading) {
@@ -353,54 +342,111 @@ export default function Home() {
             </div>
           )}
 
-          {/* 詳細検索 */}
-          <div className="mb-8">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-black">🔎 詳細検索</h2>
+          {/* 詳細検索ボタン */}
+          <div className="mb-8 flex justify-center items-center gap-4">
+            <button
+              onClick={() => setShowDetailSearchModal(true)}
+              className="px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2"
+            >
+              <span className="text-xl">🔎</span>
+              <span>詳細検索</span>
+              {selectedCategories.length > 0 && (
+                <span className="bg-white text-pink-600 px-2 py-1 rounded-full text-sm font-bold">
+                  {selectedCategories.length}
+                </span>
+              )}
+            </button>
+            {(selectedCategories.length > 0 || selectedGenre || searchQuery) && (
               <button
-                onClick={() => setShowDetailSearch(!showDetailSearch)}
-                className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors"
+                onClick={clearAllFilters}
+                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors"
               >
-                {showDetailSearch ? '閉じる' : '開く'}
+                すべてクリア
               </button>
-            </div>
-
-            {showDetailSearch && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <p className="text-sm text-gray-600">
-                    選択中: {selectedCategories.length}件
-                  </p>
-                  {(selectedCategories.length > 0 || selectedGenre || searchQuery) && (
-                    <button
-                      onClick={clearAllFilters}
-                      className="text-sm text-pink-500 hover:text-pink-700 underline"
-                    >
-                      すべてクリア
-                    </button>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {allCategories.map((category) => {
-                    const isSelected = selectedCategories.includes(category);
-                    return (
-                      <button
-                        key={category}
-                        onClick={() => handleCategoryToggle(category)}
-                        className={`px-4 py-2 rounded-full text-white text-sm transition-all ${
-                          isSelected
-                            ? `${getCategoryColor(category)} ring-2 ring-pink-500 scale-105`
-                            : `${getCategoryColor(category)} opacity-60 hover:opacity-100`
-                        }`}
-                      >
-                        {isSelected && '✓ '}{category}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
             )}
           </div>
+
+          {/* 選択中のカテゴリ表示 */}
+          {selectedCategories.length > 0 && (
+            <div className="mb-8 flex justify-center">
+              <div className="bg-white rounded-lg shadow-md p-4 flex flex-wrap gap-2 items-center">
+                <span className="text-sm text-gray-600 font-bold">選択中:</span>
+                {selectedCategories.map((categoryName) => {
+                  const category = categories.find(c => c.name === categoryName);
+                  return (
+                    <span
+                      key={categoryName}
+                      className={`px-3 py-1 rounded-full text-white text-sm flex items-center gap-1 ${getCategoryColor(category?.color || 'default')}`}
+                    >
+                      {categoryName}
+                      <button
+                        onClick={() => handleCategoryToggle(categoryName)}
+                        className="ml-1 hover:bg-white hover:bg-opacity-20 rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 詳細検索モーダル */}
+          {showDetailSearchModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+                <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-center rounded-t-2xl">
+                  <h2 className="text-2xl font-bold text-black">🔎 詳細検索</h2>
+                  <button
+                    onClick={() => setShowDetailSearchModal(false)}
+                    className="text-gray-400 hover:text-black text-3xl leading-none"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="p-6">
+                  <p className="text-sm text-gray-600 mb-4">
+                    選択中: {selectedCategories.length}件
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    {categories.map((category) => {
+                      const isSelected = selectedCategories.includes(category.name);
+                      return (
+                        <button
+                          key={category.name}
+                          onClick={() => handleCategoryToggle(category.name)}
+                          className={`px-5 py-3 rounded-full text-white font-bold transition-all ${
+                            isSelected
+                              ? `${getCategoryColor(category.color)} ring-4 ring-pink-300 scale-110 shadow-lg`
+                              : `${getCategoryColor(category.color)} opacity-60 hover:opacity-100 hover:scale-105`
+                          }`}
+                        >
+                          {isSelected && '✓ '}{category.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-6 flex justify-end gap-4 rounded-b-2xl">
+                  <button
+                    onClick={() => {
+                      setSelectedCategories([]);
+                    }}
+                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    選択をクリア
+                  </button>
+                  <button
+                    onClick={() => setShowDetailSearchModal(false)}
+                    className="px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold rounded-lg hover:shadow-lg transition-all"
+                  >
+                    検索する
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 人物一覧 */}
           <section ref={peopleListRef} className="mb-12">

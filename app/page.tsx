@@ -19,7 +19,7 @@ export default function Home() {
   const [people, setPeople] = useState<Person[]>([]);
   const [contents, setContents] = useState<Content[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]); // ← 動的に取得
+  const [categories, setCategories] = useState<Category[]>([]);
   const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
   const [filteredContents, setFilteredContents] = useState<Content[]>([]);
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
@@ -39,7 +39,7 @@ export default function Home() {
           fetch('/api/people'),
           fetch('/api/contents'),
           fetch('/api/genres'),
-          fetch('/api/categories'), // ← カテゴリを動的に取得
+          fetch('/api/categories'),
         ]);
 
         const peopleData = await peopleRes.json();
@@ -50,7 +50,7 @@ export default function Home() {
         setPeople(peopleData);
         setContents(contentsData);
         setGenres(genresData);
-        setCategories(categoriesData); // ← カテゴリをセット
+        setCategories(categoriesData);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -475,32 +475,47 @@ export default function Home() {
                   const name = person.properties['人名']?.title[0]?.plain_text || '名前なし';
                   const profileImage = person.properties['プロフィール画像']?.files[0]?.file?.url || person.properties['プロフィール画像']?.files[0]?.external?.url || '';
                   const personCategories = person.properties['カテゴリ']?.multi_select || [];
+                  const fanzaLink = person.properties['FANZAリンク']?.url || ''; // ← FANZAリンク取得
 
                   return (
-                    <Link
+                    <div
                       key={personId}
-                      href={`/person/${personId}`}
                       className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4"
                     >
-                      {profileImage && (
-                        <img
-                          src={profileImage}
-                          alt={name}
-                          className="w-full h-48 object-cover rounded-lg mb-3"
-                        />
+                      <Link href={`/person/${personId}`}>
+                        {profileImage && (
+                          <img
+                            src={profileImage}
+                            alt={name}
+                            className="w-full h-48 object-cover rounded-lg mb-3"
+                          />
+                        )}
+                        <h3 className="font-bold text-lg mb-2 text-gray-900">{name}</h3>
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {personCategories.map((cat: any) => (
+                            <span
+                              key={cat.name}
+                              className="px-2 py-1 bg-pink-100 text-pink-600 rounded text-xs"
+                            >
+                              {cat.name}
+                            </span>
+                          ))}
+                        </div>
+                      </Link>
+                      
+                      {/* FANZAリンクボタン */}
+                      {fanzaLink && (
+                        <a
+                          href={fanzaLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full py-2 px-4 bg-gradient-to-r from-pink-500 to-red-500 text-white text-center font-bold rounded-lg hover:from-pink-600 hover:to-red-600 transition-all shadow-md hover:shadow-lg"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          🎬 動画をチェック
+                        </a>
                       )}
-                      <h3 className="font-bold text-lg mb-2 text-gray-900">{name}</h3>
-                      <div className="flex flex-wrap gap-1">
-                        {personCategories.map((cat: any) => (
-                          <span
-                            key={cat.name}
-                            className="px-2 py-1 bg-pink-100 text-pink-600 rounded text-xs"
-                          >
-                            {cat.name}
-                          </span>
-                        ))}
-                      </div>
-                    </Link>
+                    </div>
                   );
                 })}
               </div>

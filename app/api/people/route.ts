@@ -14,13 +14,13 @@ export async function GET(request: NextRequest) {
       database_id: databaseId,
       sorts: [
         {
-          property: '作成日時',
-          direction: 'descending',
+          property: '人名',
+          direction: 'ascending',
         },
       ],
     };
 
-    // 複数カテゴリに対応（multi_select の contains を使用）
+    // カテゴリフィルター（multi_select対応）
     if (categoryFilter) {
       query.filter = {
         property: 'カテゴリ',
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching people:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch people' },
+      { error: 'Failed to fetch people', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

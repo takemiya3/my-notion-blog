@@ -14,13 +14,13 @@ export async function GET(request: NextRequest) {
       database_id: databaseId,
       sorts: [
         {
-          property: '作成日時',
+          property: '公開日',
           direction: 'descending',
         },
       ],
     };
 
-    // 複数カテゴリに対応（multi_select の contains を使用）
+    // カテゴリフィルター（multi_select対応）
     if (categoryFilter) {
       query.filter = {
         property: 'カテゴリ',
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching contents:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch contents' },
+      { error: 'Failed to fetch contents', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

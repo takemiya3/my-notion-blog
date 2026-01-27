@@ -14,11 +14,14 @@ export default function Header() {
             <span className="text-2xl">🎬</span>
             <span className="text-xl font-bold text-gray-900">放課後制服動画ナビ</span>
           </Link>
-          
+
           {/* デスクトップメニュー */}
           <nav className="hidden md:flex gap-6">
             <Link href="/" className="text-gray-600 hover:text-pink-600 transition-colors font-medium">
               ホーム
+            </Link>
+            <Link href="/uniform" className="text-gray-600 hover:text-pink-600 transition-colors font-medium">
+              🎽 制服検索
             </Link>
             <Link href="/ranking" className="text-gray-600 hover:text-pink-600 transition-colors font-medium">
               ランキング
@@ -58,6 +61,13 @@ export default function Header() {
               onClick={() => setIsMenuOpen(false)}
             >
               ホーム
+            </Link>
+            <Link
+              href="/uniform"
+              className="block py-2 px-4 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded transition-colors font-medium"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              🎽 制服検索
             </Link>
             <Link
               href="/ranking"

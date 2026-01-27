@@ -13,6 +13,7 @@ type SortOption = 'newest' | 'popular' | 'sales' | 'name';
 export default function Home() {
   const [people, setPeople] = useState<Person[]>([]);
   const [contents, setContents] = useState<Content[]>([]);
+  const [categoryImages, setCategoryImages] = useState<any[]>([]); // ← 追加
   const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
   const [filteredContents, setFilteredContents] = useState<Content[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('全て');
@@ -26,16 +27,19 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [peopleRes, contentsRes] = await Promise.all([
+        const [peopleRes, contentsRes, genresRes] = await Promise.all([
           fetch('/api/people'),
           fetch('/api/contents'),
+          fetch('/api/genres'), // ← 追加
         ]);
 
         const peopleData = await peopleRes.json();
         const contentsData = await contentsRes.json();
+        const genresData = await genresRes.json(); // ← 追加
 
         setPeople(peopleData);
         setContents(contentsData);
+        setCategoryImages(genresData); // ← 追加
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -96,7 +100,7 @@ export default function Home() {
       case 'name':
         return sorted.sort((a, b) => {
           const nameA = a.properties['タイトル']?.title[0]?.plain_text || '';
-          const nameB = b.properties['タイトル']?.title[0]?.plain_text || '';
+          const nameB = a.properties['タイトル']?.title[0]?.plain_text || '';
           return nameA.localeCompare(nameB, 'ja');
         });
       default:
@@ -162,6 +166,18 @@ export default function Home() {
     setSearchQuery('');
   };
 
+  // ← 追加：カテゴリ画像取得関数
+  const getCategoryImage = (category: string): string => {
+    const categoryData = categoryImages.find(
+      (cat: any) => cat.properties?.['ジャンル名']?.title?.[0]?.plain_text === category
+    );
+    if (categoryData) {
+      const imageProperty = categoryData.properties?.['イメージ画像'];
+      return imageProperty?.files?.[0]?.file?.url || imageProperty?.files?.[0]?.external?.url || '';
+    }
+    return '';
+  };
+
   const getCategoryColor = (category: string, isSelected: boolean) => {
     const colors: { [key: string]: { bg: string; hover: string; selected: string } } = {
       '全て': { bg: 'bg-gray-500', hover: 'hover:bg-gray-600', selected: 'bg-gray-600' },
@@ -218,15 +234,24 @@ export default function Home() {
             )}
           </div>
 
-          {/* カテゴリボタン */}
+          {/* カテゴリボタン（画像付き） */}
           <div className="flex justify-center gap-4 mb-8 flex-wrap">
             {categories.map((category) => {
               const isSelected = selectedCategory === category;
+              const imageUrl = getCategoryImage(category); // ← 追加
+
               return (
                 <button
                   key={category}
                   onClick={() => handleCategoryClick(category)}
                   className={`px-6 py-2 rounded-full text-white transition-all ${getCategoryColor(category, isSelected)}`}
+                  style={imageUrl ? {
+                    backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${imageUrl})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    minWidth: '120px',
+                    minHeight: '60px',
+                  } : {}} // ← 追加：画像がある場合は背景に設定
                 >
                   {category}
                 </button>

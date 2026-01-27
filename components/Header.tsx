@@ -21,7 +21,7 @@ export default function Header() {
               ホーム
             </Link>
             <Link href="/uniform" className="text-gray-600 hover:text-pink-600 transition-colors font-medium">
-              🎽 制服検索
+              制服検索
             </Link>
             <Link href="/ranking" className="text-gray-600 hover:text-pink-600 transition-colors font-medium">
               ランキング
@@ -67,7 +67,7 @@ export default function Header() {
               className="block py-2 px-4 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded transition-colors font-medium"
               onClick={() => setIsMenuOpen(false)}
             >
-              🎽 制服検索
+               制服検索
             </Link>
             <Link
               href="/ranking"

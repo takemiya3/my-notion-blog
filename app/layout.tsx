@@ -7,8 +7,8 @@ export const metadata: Metadata = {
     default: '放課後制服動画ナビ - 人物・コンテンツ検索サイト',
     template: '%s | 放課後制服動画ナビ'
   },
-  description: '放課後制服動画ナビは、人物とコンテンツの情報を簡単に検索できるサイトです。女優、モデル、グラビア、アイドル、タレントの詳細情報や出演作品を探せます。',
-  keywords: ['放課後制服', '動画', '女優', 'モデル', 'グラビア', 'アイドル', 'タレント', 'コンテンツ検索'],
+  description: '放課後制服動画ナビは、制服・セーラー服・ブレザー・体操服・スクール水着などの動画作品と出演者の詳細情報を検索できる専門サイトです。',
+  keywords: ['放課後制服', '制服動画', 'セーラー服', 'ブレザー', '体操服', 'スクール水着', 'ブルマ', '美少女'],
   authors: [{ name: '放課後制服動画ナビ' }],
   creator: '放課後制服動画ナビ',
   publisher: '放課後制服動画ナビ',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     url: 'https://seifuku-jk.com',
     siteName: '放課後制服動画ナビ',
     title: '放課後制服動画ナビ - 人物・コンテンツ検索サイト',
-    description: '人物とコンテンツの情報を簡単に検索できるサイト。女優、モデル、グラビア、アイドル、タレントの詳細情報や出演作品を探せます。',
+    description: '制服・セーラー服・ブレザー・体操服・スクール水着などの動画作品と出演者の詳細情報を検索できる専門サイトです。',
     images: [
       {
         url: '/og-image.png',
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: '放課後制服動画ナビ - 人物・コンテンツ検索サイト',
-    description: '人物とコンテンツの情報を簡単に検索できるサイト',
+    description: '制服・セーラー服・ブレザー・体操服・スクール水着などの動画作品と出演者情報を検索',
     images: ['/og-image.png'],
   },
   verification: {

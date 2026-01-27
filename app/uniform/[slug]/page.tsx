@@ -3,7 +3,6 @@ import Link from 'next/link';
 
 const NOTION_API_KEY = process.env.NOTION_API_KEY;
 const NOTION_UNIFORM_CATEGORY_DB_ID = process.env.NOTION_UNIFORM_CATEGORY_DB_ID;
-const NOTION_CONTENT_DB_ID = process.env.NOTION_CONTENT_DB_ID;
 
 interface UniformCategory {
   id: string;
@@ -60,10 +59,19 @@ async function getContentsByIds(ids: string[]): Promise<Content[]> {
       const page = await notion.pages.retrieve({ page_id: id });
       const properties = (page as any).properties;
 
+      // プロパティ名を修正：「タイトル」→「作品名」、画像プロパティも確認
+      const title = properties['作品名']?.title?.[0]?.plain_text || 
+                   properties['タイトル']?.title?.[0]?.plain_text || '';
+      
+      const imageUrl = properties['画像']?.files?.[0]?.file?.url || 
+                      properties['画像']?.files?.[0]?.external?.url ||
+                      properties['サムネイル画像']?.files?.[0]?.file?.url || 
+                      properties['サムネイル画像']?.files?.[0]?.external?.url;
+
       contents.push({
         id: page.id,
-        title: properties['タイトル']?.title?.[0]?.plain_text || '',
-        imageUrl: properties['サムネイル画像']?.files?.[0]?.file?.url || properties['サムネイル画像']?.files?.[0]?.external?.url,
+        title,
+        imageUrl,
       });
     } catch (error) {
       console.error(`Failed to fetch content ${id}:`, error);

@@ -59,14 +59,9 @@ async function getContentsByIds(ids: string[]): Promise<Content[]> {
       const page = await notion.pages.retrieve({ page_id: id });
       const properties = (page as any).properties;
 
-      // プロパティ名を修正：「タイトル」→「作品名」、画像プロパティも確認
-      const title = properties['作品名']?.title?.[0]?.plain_text || 
-                   properties['タイトル']?.title?.[0]?.plain_text || '';
-      
-      const imageUrl = properties['画像']?.files?.[0]?.file?.url || 
-                      properties['画像']?.files?.[0]?.external?.url ||
-                      properties['サムネイル画像']?.files?.[0]?.file?.url || 
-                      properties['サムネイル画像']?.files?.[0]?.external?.url;
+      const title = properties['タイトル']?.title?.[0]?.plain_text || '';
+      const imageUrl = properties['サムネイル']?.files?.[0]?.file?.url || 
+                      properties['サムネイル']?.files?.[0]?.external?.url;
 
       contents.push({
         id: page.id,
@@ -98,7 +93,6 @@ export default async function UniformCategoryPage({
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
-        {/* ヘッダー */}
         <div className="mb-8">
           <Link href="/" className="text-pink-600 hover:text-pink-700 mb-4 inline-block">
             ← ホームに戻る
@@ -107,7 +101,6 @@ export default async function UniformCategoryPage({
           <p className="text-gray-600 text-lg">{category.description}</p>
         </div>
 
-        {/* コンテンツ一覧 */}
         {contents.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">このカテゴリにはまだコンテンツがありません</p>

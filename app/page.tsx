@@ -8,15 +8,17 @@ import Loading from '@/components/Loading';
 
 type Person = any;
 type Content = any;
+type Genre = any;
 type SortOption = 'newest' | 'popular' | 'sales' | 'name';
 
 export default function Home() {
   const [people, setPeople] = useState<Person[]>([]);
   const [contents, setContents] = useState<Content[]>([]);
-  const [categoryImages, setCategoryImages] = useState<any[]>([]); // ← 追加
+  const [genres, setGenres] = useState<Genre[]>([]);
   const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
   const [filteredContents, setFilteredContents] = useState<Content[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('全て');
+  const [selectedGenre, setSelectedGenre] = useState<string | null>(null); // ← 追加
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [contentSort, setContentSort] = useState<SortOption>('newest');
   const [peopleSort, setPeopleSort] = useState<SortOption>('name');
@@ -30,16 +32,16 @@ export default function Home() {
         const [peopleRes, contentsRes, genresRes] = await Promise.all([
           fetch('/api/people'),
           fetch('/api/contents'),
-          fetch('/api/genres'), // ← 追加
+          fetch('/api/genres'),
         ]);
 
         const peopleData = await peopleRes.json();
         const contentsData = await contentsRes.json();
-        const genresData = await genresRes.json(); // ← 追加
+        const genresData = await genresRes.json();
 
         setPeople(peopleData);
         setContents(contentsData);
-        setCategoryImages(genresData); // ← 追加
+        setGenres(genresData);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -51,8 +53,8 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    filterAndSortData(selectedCategory, searchQuery, peopleSort, contentSort);
-  }, [selectedCategory, searchQuery, peopleSort, contentSort, people, contents]);
+    filterAndSortData(selectedCategory, selectedGenre, searchQuery, peopleSort, contentSort);
+  }, [selectedCategory, selectedGenre, searchQuery, peopleSort, contentSort, people, contents]);
 
   const sortPeople = (peopleList: Person[], sortOption: SortOption): Person[] => {
     const sorted = [...peopleList];
@@ -100,7 +102,7 @@ export default function Home() {
       case 'name':
         return sorted.sort((a, b) => {
           const nameA = a.properties['タイトル']?.title[0]?.plain_text || '';
-          const nameB = a.properties['タイトル']?.title[0]?.plain_text || '';
+          const nameB = b.properties['タイトル']?.title[0]?.plain_text || '';
           return nameA.localeCompare(nameB, 'ja');
         });
       default:
@@ -110,6 +112,7 @@ export default function Home() {
 
   const filterAndSortData = (
     category: string,
+    genre: string | null,
     query: string,
     peopleSortOption: SortOption,
     contentSortOption: SortOption
@@ -117,6 +120,7 @@ export default function Home() {
     let filteredP = people;
     let filteredC = contents;
 
+    // カテゴリフィルター
     if (category !== '全て') {
       filteredP = filteredP.filter((person: Person) => {
         const personCategories = person.properties['カテゴリ']?.multi_select || [];
@@ -129,6 +133,20 @@ export default function Home() {
       });
     }
 
+    // ジャンルフィルター（追加）
+    if (genre) {
+      filteredP = filteredP.filter((person: Person) => {
+        const personGenre = person.properties['ジャンル']?.select?.name || '';
+        return personGenre === genre;
+      });
+
+      filteredC = filteredC.filter((content: Content) => {
+        const contentGenre = content.properties['ジャンル']?.select?.name || '';
+        return contentGenre === genre;
+      });
+    }
+
+    // 検索フィルター
     if (query.trim() !== '') {
       const lowerQuery = query.toLowerCase();
 
@@ -158,24 +176,16 @@ export default function Home() {
     setSelectedCategory(category);
   };
 
+  const handleGenreClick = (genreName: string) => {
+    setSelectedGenre(selectedGenre === genreName ? null : genreName);
+  };
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
 
   const clearSearch = () => {
     setSearchQuery('');
-  };
-
-  // ← 追加：カテゴリ画像取得関数
-  const getCategoryImage = (category: string): string => {
-    const categoryData = categoryImages.find(
-      (cat: any) => cat.properties?.['ジャンル名']?.title?.[0]?.plain_text === category
-    );
-    if (categoryData) {
-      const imageProperty = categoryData.properties?.['イメージ画像'];
-      return imageProperty?.files?.[0]?.file?.url || imageProperty?.files?.[0]?.external?.url || '';
-    }
-    return '';
   };
 
   const getCategoryColor = (category: string, isSelected: boolean) => {
@@ -234,29 +244,61 @@ export default function Home() {
             )}
           </div>
 
-          {/* カテゴリボタン（画像付き） */}
-          <div className="flex justify-center gap-4 mb-8 flex-wrap">
-            {categories.map((category) => {
-              const isSelected = selectedCategory === category;
-              const imageUrl = getCategoryImage(category); // ← 追加
+          {/* ジャンルボタン（画像付き） */}
+          {genres.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-bold mb-4 text-black">📷 ジャンルで探す</h2>
+              <div className="flex justify-center gap-4 flex-wrap">
+                {genres.map((genre: Genre) => {
+                  const genreName = genre.properties?.['ジャンル名']?.title?.[0]?.plain_text || '';
+                  const genreImage = genre.properties?.['イメージ画像']?.files?.[0]?.file?.url || 
+                                    genre.properties?.['イメージ画像']?.files?.[0]?.external?.url || '';
+                  const isSelected = selectedGenre === genreName;
 
-              return (
-                <button
-                  key={category}
-                  onClick={() => handleCategoryClick(category)}
-                  className={`px-6 py-2 rounded-full text-white transition-all ${getCategoryColor(category, isSelected)}`}
-                  style={imageUrl ? {
-                    backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${imageUrl})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    minWidth: '120px',
-                    minHeight: '60px',
-                  } : {}} // ← 追加：画像がある場合は背景に設定
-                >
-                  {category}
-                </button>
-              );
-            })}
+                  return (
+                    <button
+                      key={genre.id}
+                      onClick={() => handleGenreClick(genreName)}
+                      className={`relative overflow-hidden rounded-lg transition-all ${
+                        isSelected ? 'ring-4 ring-pink-500 scale-105' : 'hover:scale-105'
+                      }`}
+                      style={{
+                        width: '150px',
+                        height: '100px',
+                        backgroundImage: genreImage ? `url(${genreImage})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                      }}
+                    >
+                      <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                        <span className="text-white font-bold text-lg drop-shadow-lg">
+                          {genreName}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* カテゴリボタン */}
+          <div className="mb-8">
+            <h2 className="text-xl font-bold mb-4 text-black">🏷️ カテゴリで探す</h2>
+            <div className="flex justify-center gap-4 flex-wrap">
+              {categories.map((category) => {
+                const isSelected = selectedCategory === category;
+                return (
+                  <button
+                    key={category}
+                    onClick={() => handleCategoryClick(category)}
+                    className={`px-6 py-2 rounded-full text-white transition-all ${getCategoryColor(category, isSelected)}`}
+                  >
+                    {category}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* 人物一覧 */}

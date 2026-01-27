@@ -111,66 +111,84 @@ export default function Home() {
   };
 
   const filterAndSortData = (
-    category: string,
-    genre: string | null,
-    query: string,
-    peopleSortOption: SortOption,
-    contentSortOption: SortOption
-  ) => {
-    let filteredP = people;
-    let filteredC = contents;
+  category: string,
+  genre: string | null,
+  query: string,
+  peopleSortOption: SortOption,
+  contentSortOption: SortOption
+) => {
+  let filteredP = people;
+  let filteredC = contents;
 
-    // カテゴリフィルター
-    if (category !== '全て') {
-      filteredP = filteredP.filter((person: Person) => {
-        const personCategories = person.properties['カテゴリ']?.multi_select || [];
-        return personCategories.some((cat: any) => cat.name === category);
-      });
+  // カテゴリフィルター
+  if (category !== '全て') {
+    filteredP = filteredP.filter((person: Person) => {
+      const personCategories = person.properties['カテゴリ']?.multi_select || [];
+      return personCategories.some((cat: any) => cat.name === category);
+    });
 
-      filteredC = filteredC.filter((content: Content) => {
-        const contentCategories = content.properties['カテゴリ']?.multi_select || [];
-        return contentCategories.some((cat: any) => cat.name === category);
-      });
-    }
+    filteredC = filteredC.filter((content: Content) => {
+      const contentCategories = content.properties['カテゴリ']?.multi_select || [];
+      return contentCategories.some((cat: any) => cat.name === category);
+    });
+  }
 
-    // ジャンルフィルター（追加）
-    if (genre) {
-      filteredP = filteredP.filter((person: Person) => {
-        const personGenre = person.properties['ジャンル']?.select?.name || '';
-        return personGenre === genre;
-      });
+  // ジャンルフィルター（Multi-select対応に修正）
+  if (genre) {
+    filteredP = filteredP.filter((person: Person) => {
+      // Select形式（旧）とMulti-select形式（新）の両方に対応
+      const personGenreSelect = person.properties['ジャンル']?.select?.name || '';
+      const personGenreMulti = person.properties['ジャンル']?.multi_select || [];
+      
+      // Select形式の場合
+      if (personGenreSelect) {
+        return personGenreSelect === genre;
+      }
+      
+      // Multi-select形式の場合
+      return personGenreMulti.some((g: any) => g.name === genre);
+    });
 
-      filteredC = filteredC.filter((content: Content) => {
-        const contentGenre = content.properties['ジャンル']?.select?.name || '';
-        return contentGenre === genre;
-      });
-    }
+    filteredC = filteredC.filter((content: Content) => {
+      // Select形式（旧）とMulti-select形式（新）の両方に対応
+      const contentGenreSelect = content.properties['ジャンル']?.select?.name || '';
+      const contentGenreMulti = content.properties['ジャンル']?.multi_select || [];
+      
+      // Select形式の場合
+      if (contentGenreSelect) {
+        return contentGenreSelect === genre;
+      }
+      
+      // Multi-select形式の場合
+      return contentGenreMulti.some((g: any) => g.name === genre);
+    });
+  }
 
-    // 検索フィルター
-    if (query.trim() !== '') {
-      const lowerQuery = query.toLowerCase();
+  // 検索フィルター
+  if (query.trim() !== '') {
+    const lowerQuery = query.toLowerCase();
 
-      filteredP = filteredP.filter((person: Person) => {
-        const name = person.properties['人名']?.title[0]?.plain_text || '';
-        const description = person.properties['説明文']?.rich_text[0]?.plain_text || '';
-        return name.toLowerCase().includes(lowerQuery) ||
-          description.toLowerCase().includes(lowerQuery);
-      });
+    filteredP = filteredP.filter((person: Person) => {
+      const name = person.properties['人名']?.title[0]?.plain_text || '';
+      const description = person.properties['説明文']?.rich_text[0]?.plain_text || '';
+      return name.toLowerCase().includes(lowerQuery) ||
+        description.toLowerCase().includes(lowerQuery);
+    });
 
-      filteredC = filteredC.filter((content: Content) => {
-        const title = content.properties['タイトル']?.title[0]?.plain_text || '';
-        const description = content.properties['説明文']?.rich_text[0]?.plain_text || '';
-        return title.toLowerCase().includes(lowerQuery) ||
-          description.toLowerCase().includes(lowerQuery);
-      });
-    }
+    filteredC = filteredC.filter((content: Content) => {
+      const title = content.properties['タイトル']?.title[0]?.plain_text || '';
+      const description = content.properties['説明文']?.rich_text[0]?.plain_text || '';
+      return title.toLowerCase().includes(lowerQuery) ||
+        description.toLowerCase().includes(lowerQuery);
+    });
+  }
 
-    filteredP = sortPeople(filteredP, peopleSortOption);
-    filteredC = sortContents(filteredC, contentSortOption);
+  filteredP = sortPeople(filteredP, peopleSortOption);
+  filteredC = sortContents(filteredC, contentSortOption);
 
-    setFilteredPeople(filteredP);
-    setFilteredContents(filteredC);
-  };
+  setFilteredPeople(filteredP);
+  setFilteredContents(filteredC);
+};
 
   const handleCategoryClick = (category: string) => {
     setSelectedCategory(category);

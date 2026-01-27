@@ -46,7 +46,6 @@ export default function Home() {
     fetchData();
   }, []);
 
-  // カテゴリ、検索、ソートでフィルタリング
   useEffect(() => {
     filterAndSortData(selectedCategory, searchQuery, peopleSort, contentSort);
   }, [selectedCategory, searchQuery, peopleSort, contentSort, people, contents]);
@@ -114,7 +113,6 @@ export default function Home() {
     let filteredP = people;
     let filteredC = contents;
 
-    // カテゴリフィルター
     if (category !== '全て') {
       filteredP = filteredP.filter((person: Person) => {
         const personCategories = person.properties['カテゴリ']?.multi_select || [];
@@ -127,7 +125,6 @@ export default function Home() {
       });
     }
 
-    // 検索フィルター
     if (query.trim() !== '') {
       const lowerQuery = query.toLowerCase();
 
@@ -135,18 +132,17 @@ export default function Home() {
         const name = person.properties['人名']?.title[0]?.plain_text || '';
         const description = person.properties['説明文']?.rich_text[0]?.plain_text || '';
         return name.toLowerCase().includes(lowerQuery) ||
-               description.toLowerCase().includes(lowerQuery);
+          description.toLowerCase().includes(lowerQuery);
       });
 
       filteredC = filteredC.filter((content: Content) => {
         const title = content.properties['タイトル']?.title[0]?.plain_text || '';
         const description = content.properties['説明文']?.rich_text[0]?.plain_text || '';
         return title.toLowerCase().includes(lowerQuery) ||
-               description.toLowerCase().includes(lowerQuery);
+          description.toLowerCase().includes(lowerQuery);
       });
     }
 
-    // ソート
     filteredP = sortPeople(filteredP, peopleSortOption);
     filteredC = sortContents(filteredC, contentSortOption);
 
@@ -191,7 +187,9 @@ export default function Home() {
       <Header />
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4">
-<h1 className="text-4xl font-bold text-center mb-8 text-black">放課後制服動画ナビ</h1>          {/* 検索バー */}
+          <h1 className="text-4xl font-bold text-center mb-8 text-black">放課後制服動画ナビ</h1>
+
+          {/* 検索バー */}
           <div className="max-w-2xl mx-auto mb-8">
             <div className="relative">
               <input
@@ -224,7 +222,6 @@ export default function Home() {
           <div className="flex justify-center gap-4 mb-8 flex-wrap">
             {categories.map((category) => {
               const isSelected = selectedCategory === category;
-
               return (
                 <button
                   key={category}
@@ -241,8 +238,8 @@ export default function Home() {
           <section className="mb-12">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-black">
-  人物一覧 ({filteredPeople.length}件)
-</h2>
+                人物一覧 ({filteredPeople.length}件)
+              </h2>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-black">並び替え:</span>
                 <select
@@ -278,7 +275,8 @@ export default function Home() {
                           className="w-full h-48 object-cover rounded-lg mb-3"
                         />
                       )}
-<h3 className="font-bold text-lg mb-2 text-gray-900">{name}</h3>                      <div className="flex flex-wrap gap-1">
+                      <h3 className="font-bold text-lg mb-2 text-gray-900">{name}</h3>
+                      <div className="flex flex-wrap gap-1">
                         {personCategories.map((cat: any) => (
                           <span
                             key={cat.name}
@@ -299,8 +297,8 @@ export default function Home() {
           <section>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-black">
-  最新コンテンツ ({filteredContents.length}件)
-</h2>
+                最新コンテンツ ({filteredContents.length}件)
+              </h2>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-black">並び替え:</span>
                 <select
@@ -339,7 +337,8 @@ export default function Home() {
                         />
                       )}
                       <div className="p-4">
-<h3 className="font-bold text-lg mb-2 line-clamp-2 text-black">{title}</h3>                        <p className="text-gray-600 text-sm">👁 {views.toLocaleString()} views</p>
+                        <h3 className="font-bold text-lg mb-2 line-clamp-2 text-black">{title}</h3>
+                        <p className="text-gray-600 text-sm">👁 {views.toLocaleString()} views</p>
                       </div>
                     </Link>
                   );

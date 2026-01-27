@@ -2,25 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Client } from '@notionhq/client';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
-const databaseId = process.env.NOTION_CONTENTS_DATABASE_ID!;
+const databaseId = process.env.NOTION_CONTENT_DB_ID!;
 
 export async function GET(request: NextRequest) {
   try {
+    if (!process.env.NOTION_API_KEY) {
+      throw new Error('NOTION_API_KEY is not set');
+    }
+    if (!databaseId) {
+      throw new Error('NOTION_CONTENT_DB_ID is not set');
+    }
+
     const { searchParams } = new URL(request.url);
     const categoryFilter = searchParams.get('category');
     const limit = searchParams.get('limit');
 
     const query: any = {
       database_id: databaseId,
-      sorts: [
-        {
-          property: '公開日',
-          direction: 'descending',
-        },
-      ],
     };
 
-    // カテゴリフィルター（multi_select対応）
     if (categoryFilter) {
       query.filter = {
         property: 'カテゴリ',

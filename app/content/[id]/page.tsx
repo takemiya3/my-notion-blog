@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import Header from '@/components/Header';
+
 import Footer from '@/components/Footer';
 import ReviewSection from '@/components/ReviewSection';
 import { Client } from '@notionhq/client';
@@ -252,7 +252,6 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
         dangerouslySetInnerHTML={{__html: JSON.stringify(breadcrumbJsonLd)}}
       />
 
-      <Header />
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-5xl mx-auto px-4">
           {/* パンくずリスト */}

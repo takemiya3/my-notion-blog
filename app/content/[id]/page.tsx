@@ -186,10 +186,21 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
   const category = categories[0]?.name || '';
   const genre = properties['ジャンル']?.select?.name || '';
   const performerRelations = properties['出演者']?.relation || [];
-const affiliateHTML = (properties['アフィリエイトHTML']?.rich_text[0]?.plain_text || '')
-  .replace(/\\/g, '');  // すべてのバックスラッシュを削除
-  // サンプル画像を取得
-  const sampleImages = properties['サンプル画像']?.files?.map(
+
+// ✅ デバッグログを追加
+console.log('=== アフィリエイトHTML デバッグ ===');
+console.log('生データ:', JSON.stringify(properties['アフィリエイトHTML'], null, 2));
+
+const rawHTML = properties['アフィリエイトHTML']?.rich_text?.[0]?.plain_text || '';
+console.log('取得したHTML（処理前）:', rawHTML);
+
+const affiliateHTML = rawHTML.replace(/\\/g, '');
+console.log('処理後のHTML:', affiliateHTML);
+console.log('HTMLの長さ:', affiliateHTML.length);
+console.log('=================================');
+
+// サンプル画像を取得
+const sampleImages = properties['サンプル画像']?.files?.map(
     (file: any) => file.file?.url || file.external?.url
   ).filter(Boolean) || [];
 

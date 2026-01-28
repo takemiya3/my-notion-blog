@@ -2,7 +2,7 @@ import { Client } from '@notionhq/client';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
-const PEOPLE_DB_ID = 'b070b2eb8ab24ebead49aeaedebf52e1';
+const PEOPLE_DB_ID = 'collection://f5a38d99-6a74-4948-8554-3e3d9971b82e';
 
 export interface Person {
   id: string;
@@ -18,7 +18,7 @@ export interface Person {
   categories: string[];
   genres: string[];
   fanzaLink: string;
-  contentUrls: string[];
+  contentCount: number;
 }
 
 /**
@@ -81,6 +81,9 @@ export async function getPeopleByGenre(genre: string): Promise<Person[]> {
 function mapPersonPage(page: any): Person {
   const name = page.properties['人名'].title[0]?.plain_text || '';
   
+  // ✅ 修正：relationは配列なので、そのまま length を取得
+  const contentRelation = page.properties['コンテンツ'].relation || [];
+  
   return {
     id: page.id,
     name,
@@ -101,7 +104,7 @@ function mapPersonPage(page: any): Person {
       (genre: any) => genre.name
     ) || [],
     fanzaLink: page.properties['FANZAリンク'].url || '',
-    contentUrls: JSON.parse(page.properties['コンテンツ'].relation || '[]'),
+    contentCount: contentRelation.length,
   };
 }
 
@@ -109,8 +112,7 @@ function mapPersonPage(page: any): Person {
  * 名前からスラッグを生成（URLセーフな文字列）
  */
 function generateSlug(name: string, id: string): string {
-  // 日本語名をローマ字に変換するか、IDベースにするか
-  // ここではシンプルにID末尾を使用
-  const shortId = id.slice(-8);
-  return `${shortId}`;
+  // IDの末尾8文字を使用してユニークなスラッグを生成
+  const shortId = id.replace(/-/g, '').slice(-8);
+  return shortId;
 }

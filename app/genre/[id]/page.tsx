@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Client } from '@notionhq/client';
 import type { Metadata } from 'next';
+import GenreContentCard from '@/components/GenreContentCard';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
@@ -17,7 +18,7 @@ export async function generateStaticParams() {
     const response = await notion.databases.query({
       database_id: GENRE_DB_ID,
       filter: {
-        property: '公開',  // ✅ 「公開ステータス」ではなく「公開」
+        property: '公開',
         checkbox: {
           equals: true,
         },
@@ -51,7 +52,7 @@ async function getGenreContents(genreName: string) {
         and: [
           {
             property: 'ジャンル',
-            select: { equals: genreName },  // ✅ select型に修正
+            select: { equals: genreName },
           },
           {
             property: '公開ステータス',
@@ -67,7 +68,7 @@ async function getGenreContents(genreName: string) {
       ],
       page_size: 100,
     });
-    
+
     return response.results;
   } catch (error) {
     console.error('Error fetching genre contents:', error);
@@ -112,10 +113,9 @@ export default async function GenrePage({ params }: { params: Promise<{ id: stri
   const properties = genre.properties;
   const name = properties['ジャンル名']?.title[0]?.plain_text || 'ジャンル';
   const description = properties['説明']?.rich_text[0]?.plain_text || '';
-  const image = properties['イメージ画像']?.files[0]?.file?.url || 
-                properties['イメージ画像']?.files[0]?.external?.url || '';
+  const image = properties['イメージ画像']?.files[0]?.file?.url ||
+    properties['イメージ画像']?.files[0]?.external?.url || '';
 
-  // ジャンル名でコンテンツを取得
   const contents = await getGenreContents(name);
 
   return (
@@ -144,7 +144,7 @@ export default async function GenrePage({ params }: { params: Promise<{ id: stri
                 />
               </div>
             )}
-            
+
             {/* ジャンル情報 */}
             <div className="flex-1">
               <h1 className="text-4xl font-bold mb-4 text-black">{name}</h1>
@@ -162,7 +162,7 @@ export default async function GenrePage({ params }: { params: Promise<{ id: stri
           <h2 className="text-2xl font-bold mb-6 text-black">
             コンテンツ ({contents.length}件)
           </h2>
-          
+
           {contents.length === 0 ? (
             <div className="bg-white rounded-lg shadow p-12 text-center">
               <p className="text-gray-600">
@@ -174,56 +174,22 @@ export default async function GenrePage({ params }: { params: Promise<{ id: stri
               {contents.map((content: any) => {
                 const contentId = content.id;
                 const title = content.properties['タイトル']?.title[0]?.plain_text || '無題';
-                const thumbnail = content.properties['サムネイル']?.files[0]?.file?.url || 
-                                 content.properties['サムネイル']?.files[0]?.external?.url || '';
+                const thumbnail = content.properties['サムネイル']?.files[0]?.file?.url ||
+                  content.properties['サムネイル']?.files[0]?.external?.url || '';
                 const views = content.properties['閲覧数']?.number || 0;
                 const publishedDate = content.properties['公開日']?.date?.start || '';
                 const affiliateUrl = content.properties['アフィリエイトURL']?.url || '';
 
                 return (
-                  <div
+                  <GenreContentCard
                     key={contentId}
-                    className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden"
-                  >
-                    <Link href={`/content/${contentId}`}>
-                      {thumbnail && (
-                        <Image
-                          src={thumbnail}
-                          alt={title}
-                          width={300}
-                          height={200}
-                          className="w-full h-48 object-cover"
-                        />
-                      )}
-                      <div className="p-4">
-                        <h3 className="font-bold text-lg line-clamp-2 text-black mb-2">
-                          {title}
-                        </h3>
-                        {publishedDate && (
-                          <p className="text-sm text-gray-600 mb-1">
-                            📅 {publishedDate}
-                          </p>
-                        )}
-                        <p className="text-sm text-gray-600 mb-3">
-                          👁 {views.toLocaleString()} views
-                        </p>
-                      </div>
-                    </Link>
-                    
-                    {affiliateUrl && (
-                      <div className="px-4 pb-4">
-                        <a
-                          href={affiliateUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block w-full text-center bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg transition-colors"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          🎬 動画をチェック
-                        </a>
-                      </div>
-                    )}
-                  </div>
+                    contentId={contentId}
+                    title={title}
+                    thumbnail={thumbnail}
+                    views={views}
+                    publishedDate={publishedDate}
+                    affiliateUrl={affiliateUrl}
+                  />
                 );
               })}
             </div>

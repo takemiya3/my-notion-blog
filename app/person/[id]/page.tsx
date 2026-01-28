@@ -1,8 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import ReviewSection from '@/components/ReviewSection';
 import { Client } from '@notionhq/client';
 import type { Metadata } from 'next';
@@ -11,21 +9,43 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 export const revalidate = 60;
 
+// ✅ 静的パス生成（必須！）
+export async function generateStaticParams() {
+  try {
+    const response = await notion.databases.query({
+      database_id: process.env.NOTION_PEOPLE_DB_ID!,
+      filter: {
+        property: '公開ステータス',
+        checkbox: {
+          equals: true,
+        },
+      },
+    });
+
+    return response.results.map((person) => ({
+      id: person.id,
+    }));
+  } catch (error) {
+    console.error('Error generating static params:', error);
+    return [];
+  }
+}
+
 // 年齢を計算する関数
 function calculateAge(birthDate: string): number | null {
   if (!birthDate) return null;
-  
+
   const today = new Date();
   const birth = new Date(birthDate);
-  
+
   let age = today.getFullYear() - birth.getFullYear();
   const monthDiff = today.getMonth() - birth.getMonth();
-  
+
   // 誕生日がまだ来ていない場合は1を引く
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
     age--;
   }
-  
+
   return age;
 }
 
@@ -87,8 +107,8 @@ async function getRelatedContents(personCategories: string[], currentPersonId: s
 
     const categoryFilters = personCategories.map(category => ({
       property: 'カテゴリ',
-      select: {
-        equals: category,
+      multi_select: {
+        contains: category,
       },
     }));
 
@@ -148,9 +168,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     `${name}のプロフィール。${categoryNames}として活躍。${birthDate ? `生年月日：${birthDate}。` : ''}出演コンテンツ一覧、口コミ、評価などの詳細情報をご覧いただけます。`;
 
   return {
-    title: `${name} - プロフィール・出演作品`,
+    title: `${name} - プロフィール・出演作品 | 放課後制服動画ナビ`,
     description: metaDescription.slice(0, 160),
-    keywords: [name, ...categoryNames.split('、').filter(Boolean), '出演作品', 'プロフィール', '動画'],
     openGraph: {
       title: `${name} - 放課後制服動画ナビ`,
       description: metaDescription.slice(0, 160),
@@ -253,7 +272,6 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
         dangerouslySetInnerHTML={{__html: JSON.stringify(breadcrumbJsonLd)}}
       />
 
-      <Header />
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-5xl mx-auto px-4">
           {/* パンくずリスト */}
@@ -495,7 +513,6 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
           <ReviewSection pageId={resolvedParams.id} pageType="人物" />
         </div>
       </div>
-      <Footer />
     </>
   );
 }

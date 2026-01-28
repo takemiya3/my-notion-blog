@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';  // ← 追加
+
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -12,7 +14,7 @@ export const metadata: Metadata = {
     template: '%s | 放課後制服動画ナビ'
   },
   description: '放課後制服動画ナビは、制服・セーラー服・ブレザー・体操服・スクール水着などの動画作品と出演者の詳細情報を検索できる専門サイトです。',
-  keywords: ['放課後制服', '制服動画', 'セーラー服', 'ブレザー', '体操服', 'スクール水着', 'ブルマ', '美少女'],
+  keywords: ['放課後制服', '制服動画', 'セーラー服', 'ブレザー', '体操服', 'スクール水着', 'ブルマ', '美少女', 'JK', '女子高生', '高校生', '高校1年生', '高校2年生', '高校3年生'],
   authors: [{ name: '放課後制服動画ナビ' }],
   creator: '放課後制服動画ナビ',
   publisher: '放課後制服動画ナビ',
@@ -64,6 +66,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <Header />
         <main>{children}</main>
+        <Footer /> 
       </body>
     </html>
   );

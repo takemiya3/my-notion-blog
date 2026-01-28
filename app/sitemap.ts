@@ -1,60 +1,89 @@
 import { MetadataRoute } from 'next';
+import { Client } from '@notionhq/client';
+
+const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://www.seifuku-jk.com'; // ← あなたのドメインに変更
-
+  const baseUrl = 'https://www.seifuku-jk.com';
+  
   // 静的ページ
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: new Date(),
       changeFrequency: 'daily',
-      priority: 1.0,
+      priority: 1,
     },
     {
-      url: `${baseUrl}/ranking`,
+      url: `${baseUrl}/people`,
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.8,
     },
+    {
+      url: `${baseUrl}/genres`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/uniform`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
   ];
 
-  // 人物ページを動的に取得
-  let peoplePages: MetadataRoute.Sitemap = [];
-  try {
-    const peopleRes = await fetch(`${baseUrl}/api/people`, {
-      next: { revalidate: 3600 } // 1時間キャッシュ
-    });
-    const people = await peopleRes.json();
+  // 人物ページ
+  const peopleResponse = await notion.databases.query({
+    database_id: process.env.NOTION_PEOPLE_DB_ID!,
+    filter: {
+      property: '公開ステータス',
+      checkbox: { equals: true },
+    },
+  });
 
-    peoplePages = people.map((person: any) => ({
-      url: `${baseUrl}/person/${person.id}`,
-      lastModified: new Date(person.last_edited_time || person.created_time),
+  const peoplePages: MetadataRoute.Sitemap = peopleResponse.results.map((page: any) => ({
+    url: `${baseUrl}/person/${page.id}`,
+    lastModified: new Date(page.last_edited_time),
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }));
+
+  // ジャンルページ
+  const genresResponse = await notion.databases.query({
+    database_id: process.env.NOTION_GENRE_DB_ID!,
+    filter: {
+      property: '公開',
+      checkbox: { equals: true },
+    },
+  });
+
+  const genrePages: MetadataRoute.Sitemap = genresResponse.results.map((page: any) => ({
+    url: `${baseUrl}/genre/${page.id}`,
+    lastModified: new Date(page.last_edited_time),
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }));
+
+  // 制服カテゴリページ
+  const uniformResponse = await notion.databases.query({
+    database_id: process.env.NOTION_UNIFORM_CATEGORY_DB_ID!,
+    filter: {
+      property: '公開ステータス',
+      checkbox: { equals: true },
+    },
+  });
+
+  const uniformPages: MetadataRoute.Sitemap = uniformResponse.results.map((page: any) => {
+    const slug = page.properties['スラッグ']?.rich_text?.[0]?.plain_text || page.id;
+    return {
+      url: `${baseUrl}/uniform/${slug}`,
+      lastModified: new Date(page.last_edited_time),
       changeFrequency: 'weekly' as const,
       priority: 0.7,
-    }));
-  } catch (error) {
-    console.error('Error fetching people for sitemap:', error);
-  }
+    };
+  });
 
-  // コンテンツページを動的に取得
-  let contentPages: MetadataRoute.Sitemap = [];
-  try {
-    const contentsRes = await fetch(`${baseUrl}/api/contents`, {
-      next: { revalidate: 3600 }
-    });
-    const contents = await contentsRes.json();
-
-    contentPages = contents.map((content: any) => ({
-      url: `${baseUrl}/content/${content.id}`,
-      lastModified: new Date(content.last_edited_time || content.created_time),
-      changeFrequency: 'weekly' as const,
-      priority: 0.6,
-    }));
-  } catch (error) {
-    console.error('Error fetching contents for sitemap:', error);
-  }
-
-  // すべてのページを結合
-  return [...staticPages, ...peoplePages, ...contentPages];
+  return [...staticPages, ...peoplePages, ...genrePages, ...uniformPages];
 }

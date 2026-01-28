@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Loading from '@/components/Loading';
+import Script from 'next/script';
 
 type Person = any;
 type Content = any;
@@ -30,6 +31,23 @@ export default function Home() {
   const [displayedPeopleCount, setDisplayedPeopleCount] = useState(10);
 
   const peopleListRef = useRef<HTMLElement>(null);
+
+  // 構造化データ（JSON-LD）
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: '放課後制服動画ナビ',
+    url: 'https://www.seifuku-jk.com',
+    description: '制服・セーラー服・ブレザー・体操服・スクール水着などの動画作品と出演者の詳細情報を検索できる専門サイトです。',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: 'https://www.seifuku-jk.com?q={search_term_string}'
+      },
+      'query-input': 'required name=search_term_string'
+    }
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -262,6 +280,13 @@ export default function Home() {
 
   return (
     <>
+      {/* 構造化データ */}
+      <Script
+        id="structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{__html: JSON.stringify(structuredData)}}
+      />
+
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4">
           <h1 className="text-4xl font-bold text-center mb-8 text-black">放課後制服動画ナビ</h1>

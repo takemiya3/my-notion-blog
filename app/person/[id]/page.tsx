@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import Script from 'next/script';
 import ReviewSection from '@/components/ReviewSection';
 import { Client } from '@notionhq/client';
 import type { Metadata } from 'next';
@@ -173,7 +174,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     openGraph: {
       title: `${name} - 放課後制服動画ナビ`,
       description: metaDescription.slice(0, 160),
-      url: `https://seifuku-jk.com/person/${resolvedParams.id}`,
+      url: `https://www.seifuku-jk.com/person/${resolvedParams.id}`,
       type: 'profile',
       images: profileImage ? [
         {
@@ -225,15 +226,17 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
 
   const relatedContents = await getRelatedContents(categoryNames, resolvedParams.id, 10);
 
+  // 構造化データ: Person型
   const personJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Person',
     name: name,
     image: profileImage,
-    birthDate: birthDate,
-    description: description,
-    jobTitle: categories.map((cat: any) => cat.name).join('、'),
-    url: `https://seifuku-jk.com/person/${resolvedParams.id}`,
+    birthDate: birthDate || undefined,
+    description: description || `${name}のプロフィールページ`,
+    jobTitle: categories.map((cat: any) => cat.name).join('、') || undefined,
+    height: height ? `${height}cm` : undefined,
+    url: `https://www.seifuku-jk.com/person/${resolvedParams.id}`,
     sameAs: [
       twitterUrl,
       instagramUrl,
@@ -241,6 +244,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
     ].filter(Boolean),
   };
 
+  // 構造化データ: パンくずリスト
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -249,34 +253,71 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
         '@type': 'ListItem',
         position: 1,
         name: 'ホーム',
-        item: 'https://seifuku-jk.com',
+        item: 'https://www.seifuku-jk.com',
       },
       {
         '@type': 'ListItem',
         position: 2,
+        name: '女優一覧',
+        item: 'https://www.seifuku-jk.com/people',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
         name: name,
-        item: `https://seifuku-jk.com/person/${resolvedParams.id}`,
+        item: `https://www.seifuku-jk.com/person/${resolvedParams.id}`,
       },
     ],
   };
 
+  // 構造化データ: 出演作品一覧（ItemList）
+  const contentsItemListJsonLd = contents.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `${name}の出演作品`,
+    numberOfItems: contents.length,
+    itemListElement: contents.slice(0, 10).map((content: any, index: number) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: {
+        '@type': 'VideoObject',
+        name: content.properties['タイトル']?.title[0]?.plain_text || '無題',
+        thumbnailUrl: content.properties['サムネイル']?.files[0]?.file?.url || 
+                     content.properties['サムネイル']?.files[0]?.external?.url || '',
+        uploadDate: content.properties['公開日']?.date?.start || '',
+        url: `https://www.seifuku-jk.com/content/${content.id}`,
+      },
+    })),
+  } : null;
+
   return (
     <>
-      {/* 構造化データを追加 */}
-      <script
+      {/* 構造化データ */}
+      <Script
+        id="person-structured-data"
         type="application/ld+json"
         dangerouslySetInnerHTML={{__html: JSON.stringify(personJsonLd)}}
       />
-      <script
+      <Script
+        id="breadcrumb-structured-data"
         type="application/ld+json"
         dangerouslySetInnerHTML={{__html: JSON.stringify(breadcrumbJsonLd)}}
       />
+      {contentsItemListJsonLd && (
+        <Script
+          id="contents-itemlist-structured-data"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{__html: JSON.stringify(contentsItemListJsonLd)}}
+        />
+      )}
 
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-5xl mx-auto px-4">
           {/* パンくずリスト */}
           <nav className="mb-6 text-sm text-gray-600">
             <Link href="/" className="hover:text-pink-500">ホーム</Link>
+            <span className="mx-2">/</span>
+            <Link href="/people" className="hover:text-pink-500">女優一覧</Link>
             <span className="mx-2">/</span>
             <span className="text-black">{name}</span>
           </nav>
@@ -375,7 +416,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
                       rel="noopener noreferrer"
                       className="inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200"
                     >
-                      動画はこちらから
+                      🎬 動画はこちらから
                     </a>
                   </div>
                 )}

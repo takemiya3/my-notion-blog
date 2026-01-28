@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-
+import AffiliateWidget from '@/components/AffiliateWidget';
 import Footer from '@/components/Footer';
 import ReviewSection from '@/components/ReviewSection';
 import { Client } from '@notionhq/client';
@@ -186,7 +186,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
   const category = categories[0]?.name || '';
   const genre = properties['ジャンル']?.select?.name || '';
   const performerRelations = properties['出演者']?.relation || [];
-　const affiliateHTML = properties['アフィリエイトHTML']?.rich_text[0]?.plain_text || '';
+  const affiliateHTML = properties['アフィリエイトHTML']?.rich_text[0]?.plain_text || '';
 
   // サンプル画像を取得
   const sampleImages = properties['サンプル画像']?.files?.map(
@@ -281,12 +281,11 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
                   <SampleImageGallery images={sampleImages} />
 
                   {/* アフィリエイトウィジェット */}
-{affiliateHTML && (
-  <div 
-    className="mt-4"
-    dangerouslySetInnerHTML={{__html: affiliateHTML}} 
-  />
-)}
+                  {affiliateHTML && (
+                    <div className="mt-4">
+                      <AffiliateWidget html={affiliateHTML} />
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -15,18 +15,24 @@ export default function Header() {
             <span className="text-xl font-bold text-gray-900">放課後制服動画ナビ</span>
           </Link>
 
-          {/* デスクトップメニュー */}
-          <nav className="hidden md:flex gap-6">
-            <Link href="/" className="text-gray-600 hover:text-pink-600 transition-colors font-medium">
-              ホーム
-            </Link>
-            <Link href="/uniform" className="text-gray-600 hover:text-pink-600 transition-colors font-medium">
-              制服検索
-            </Link>
-            <Link href="/ranking" className="text-gray-600 hover:text-pink-600 transition-colors font-medium">
-              ランキング
-            </Link>
-          </nav>
+         {/* デスクトップメニュー */}
+<nav className="hidden md:flex gap-6">
+  <Link href="/" className="text-gray-600 hover:text-pink-600 transition-colors font-medium">
+    ホーム
+  </Link>
+  <Link href="/uniform" className="text-gray-600 hover:text-pink-600 transition-colors font-medium">
+    制服検索
+  </Link>
+  <Link href="/ranking" className="text-gray-600 hover:text-pink-600 transition-colors font-medium">
+    ランキング
+  </Link>
+  <Link href="/people" className="text-gray-600 hover:text-pink-600 transition-colors font-medium">
+    女優一覧
+  </Link>
+  <Link href="/genres" className="text-gray-600 hover:text-pink-600 transition-colors font-medium">
+    ジャンル
+  </Link>
+</nav>
 
           {/* モバイルメニューボタン */}
           <button

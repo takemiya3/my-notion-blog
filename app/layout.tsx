@@ -57,7 +57,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body>{children}</body>
+       <body className={inter.className}>
+        <Header /> {/* ← これを追加 */}
+        <main>{children}</main>
+      </body>
     </html>
   );
 }

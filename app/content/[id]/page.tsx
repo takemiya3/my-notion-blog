@@ -284,7 +284,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
 {affiliateHTML && (
   <div 
     className="mt-4"
-    dangerouslySetInnerHTML= __html: affiliateHTML 
+    dangerouslySetInnerHTML={{__html: affiliateHTML}} 
   />
 )}
                 </div>

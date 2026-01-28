@@ -186,8 +186,11 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
   const category = categories[0]?.name || '';
   const genre = properties['ジャンル']?.select?.name || '';
   const performerRelations = properties['出演者']?.relation || [];
-  const affiliateHTML = properties['アフィリエイトHTML']?.rich_text[0]?.plain_text || '';
-
+const affiliateHTML = (properties['アフィリエイトHTML']?.rich_text[0]?.plain_text || '')
+  .replace(/\\\\/g, '')     // エスケープされたバックスラッシュを削除
+  .replace(/\\</g, '<')      // エスケープされた < を戻す
+  .replace(/\\>/g, '>')      // エスケープされた > を戻す
+  .replace(/\\"/g, '"');     // エスケープされた " を戻す
   // サンプル画像を取得
   const sampleImages = properties['サンプル画像']?.files?.map(
     (file: any) => file.file?.url || file.external?.url

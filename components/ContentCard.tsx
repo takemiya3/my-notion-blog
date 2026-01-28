@@ -47,16 +47,16 @@ export default function ContentCard({ content }: ContentCardProps) {
           </div>
         )}
         {content.affiliateUrl && (
-          <a
-            href={content.affiliateUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full text-center bg-blue-600 text-white py-2 
-                       rounded hover:bg-blue-700 transition-colors text-sm"
-          >
-            詳細を見る
-          </a>
-        )}
+  <a
+    href={content.affiliateUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="block w-full text-center bg-blue-600 text-white py-2 
+               rounded hover:bg-blue-700 transition-colors text-sm"
+  >
+    詳細を見る
+  </a>
+)}
       </div>
     </div>
   );

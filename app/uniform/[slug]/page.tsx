@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+
 
 const NOTION_API_KEY = process.env.NOTION_API_KEY;
 const NOTION_UNIFORM_CATEGORY_DB_ID = process.env.NOTION_UNIFORM_CATEGORY_DB_ID;
@@ -94,7 +93,7 @@ export default async function UniformCategoryPage({
 
   return (
     <>
-      <Header />
+
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
         <div className="container mx-auto px-4 py-8">
           <div className="mb-8">
@@ -137,7 +136,6 @@ export default async function UniformCategoryPage({
           )}
         </div>
       </div>
-      <Footer />
     </>
   );
 }

@@ -186,6 +186,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
   const category = categories[0]?.name || '';
   const genre = properties['ジャンル']?.select?.name || '';
   const performerRelations = properties['出演者']?.relation || [];
+　const affiliateHTML = properties['アフィリエイトHTML']?.rich_text[0]?.plain_text || '';
 
   // サンプル画像を取得
   const sampleImages = properties['サンプル画像']?.files?.map(
@@ -278,6 +279,14 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
 
                   {/* サンプル画像ギャラリー */}
                   <SampleImageGallery images={sampleImages} />
+
+                  {/* アフィリエイトウィジェット */}
+{affiliateHTML && (
+  <div 
+    className="mt-4"
+    dangerouslySetInnerHTML= __html: affiliateHTML 
+  />
+)}
                 </div>
               )}
 

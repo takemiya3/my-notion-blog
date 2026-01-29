@@ -1,7 +1,5 @@
 'use client'
 
-import { useEffect } from 'react';
-
 export default function AffiliateWidget({ 
   dataId,
   html,
@@ -11,26 +9,7 @@ export default function AffiliateWidget({
   html?: string;
   className?: string;
 }) {
-  useEffect(() => {
-    if (!dataId) return;
-
-    // スクリプトを動的に追加
-    const script = document.createElement('script');
-    script.src = 'https://widget-view.dmm.co.jp/js/placement.js';
-    script.className = 'dmm-widget-scripts';
-    script.setAttribute('data-id', dataId);
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      // クリーンアップ
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, [dataId]);
-
-  // HTMLが渡された場合
+  // HTMLが渡された場合（コンテンツページ用）
   if (html) {
     return (
       <div 
@@ -40,14 +19,19 @@ export default function AffiliateWidget({
     );
   }
 
-  // dataIdが渡された場合
+  // dataIdが渡された場合（女優一覧ページ用）
   if (dataId) {
     return (
       <div className={className}>
-        <ins 
-          className="dmm-widget-placement" 
-          data-id={dataId} 
-          style={{background: 'transparent'}}
+        <iframe
+          src="/dmm-widget.html"
+          style= 
+            width: '100%',
+            height: '400px',
+            border: 'none',
+            overflow: 'hidden'
+          
+          title="DMMアフィリエイト"
         />
       </div>
     );

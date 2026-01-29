@@ -26,10 +26,10 @@ export default function AffiliateWidget({
         <iframe
           src="/dmm-widget.html"
           style= 
-            width: '100%',
+            {{width:'100%',
             height: '400px',
             border: 'none',
-            overflow: 'hidden'
+            overflow: 'hidden'}}
           
           title="DMMアフィリエイト"
         />

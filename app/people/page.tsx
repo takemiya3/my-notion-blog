@@ -1,6 +1,7 @@
 import { Client } from '@notionhq/client';
 import Image from 'next/image';
 import Link from 'next/link';
+import Script from 'next/script'; // 追加
 import type { Metadata } from 'next';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
@@ -28,7 +29,6 @@ async function getAllPeople() {
         },
       ],
     });
-
     return response.results;
   } catch (error) {
     console.error('Error fetching people:', error);
@@ -96,6 +96,20 @@ export default async function PeoplePage() {
             <p className="text-gray-600">まだ登録されている女優がいません</p>
           </div>
         )}
+
+        {/* DMMアフィリエイトウィジェット */}
+        <div className="mt-12 mb-8">
+          <ins 
+            className="dmm-widget-placement" 
+            data-id="afc13b59f48c9eca6fbf159ddb8a8d7e" 
+            style={{background:'transparent'}} 
+          />
+          <Script
+            src="https://widget-view.dmm.co.jp/js/placement.js"
+            data-id="afc13b59f48c9eca6fbf159ddb8a8d7e"
+            strategy="lazyOnload"
+          />
+        </div>
 
         <div className="mt-12 text-center">
           <Link

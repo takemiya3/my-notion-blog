@@ -14,7 +14,7 @@ export default function AffiliateWidget({
     return (
       <div 
         className={className}
-        dangerouslySetInnerHTML=__html: html
+        dangerouslySetInnerHTML={{__html: html}}
       />
     );
   }

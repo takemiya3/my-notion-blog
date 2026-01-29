@@ -1,31 +1,46 @@
-'use client';
+'use client'
 
-import { useEffect, useRef } from 'react';
+import Script from 'next/script';
 
-interface AffiliateWidgetProps {
-  html: string;
+type AffiliateWidgetProps = {
+  dataId?: string;
+  html?: string;
+  type?: 'DMM' | 'その他';
+  className?: string;
 }
 
-export default function AffiliateWidget({ html }: AffiliateWidgetProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+export default function AffiliateWidget({ 
+  dataId,
+  html,
+  type = 'DMM',
+  className = "mt-12 mb-8" 
+}: AffiliateWidgetProps) {
+  // HTMLが直接渡された場合はそれをレンダリング
+  if (html) {
+    return (
+      <div 
+        className={className}
+        dangerouslySetInnerHTML={{__html: html}} 
+      />
+    );
+  }
 
-  useEffect(() => {
-    if (!containerRef.current || !html) return;
-
-    // HTMLを挿入
-    containerRef.current.innerHTML = html;
-
-    // スクリプトタグを抽出して実行
-    const scripts = containerRef.current.querySelectorAll('script');
-    scripts.forEach((oldScript) => {
-      const newScript = document.createElement('script');
-      Array.from(oldScript.attributes).forEach((attr) => {
-        newScript.setAttribute(attr.name, attr.value);
-      });
-      newScript.textContent = oldScript.textContent;
-      oldScript.parentNode?.replaceChild(newScript, oldScript);
-    });
-  }, [html]);
-
-  return <div ref={containerRef} />;
+  // dataIdが渡された場合はDMMウィジェットをレンダリング
+  if (dataId && type === 'DMM') {
+    return (
+      <div className={className}>
+        <ins 
+          className="dmm-widget-placement" 
+          data-id={dataId} 
+          style={{background: 'transparent'}}
+        />
+        <Script
+          src="https://widget-view.dmm.co.jp/js/placement.js"
+          strategy="afterInteractive"
+        />
+      </div>
+    );
+  }
+  
+  return null;
 }

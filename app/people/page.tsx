@@ -2,7 +2,8 @@ import { Client } from '@notionhq/client';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import DmmWidget from './DmmWidget';
+import { getAffiliatesByPath } from '@/lib/getAffiliates';
+import AffiliateWidget from '@/components/AffiliateWidget';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 const PEOPLE_DB_ID = process.env.NOTION_PEOPLE_DB_ID!;
@@ -38,6 +39,7 @@ async function getAllPeople() {
 
 export default async function PeoplePage() {
   const people = await getAllPeople();
+  const affiliates = await getAffiliatesByPath('/people');
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -97,8 +99,14 @@ export default async function PeoplePage() {
           </div>
         )}
 
-        {/* DMMアフィリエイトウィジェット */}
-        <DmmWidget />
+        {/* Notionから取得したアフィリエイトウィジェット */}
+        {affiliates.map((affiliate) => (
+          <AffiliateWidget 
+            key={affiliate.id}
+            dataId={affiliate.dataId}
+            type={affiliate.type as 'DMM' | 'その他'}
+          />
+        ))}
 
         <div className="mt-12 text-center">
           <Link

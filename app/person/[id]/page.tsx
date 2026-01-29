@@ -5,6 +5,8 @@ import Script from 'next/script';
 import ReviewSection from '@/components/ReviewSection';
 import { Client } from '@notionhq/client';
 import type { Metadata } from 'next';
+import { getAffiliatesByPath } from '@/lib/getAffiliates';
+import AffiliateWidget from '@/components/AffiliateWidget';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
@@ -35,18 +37,16 @@ export async function generateStaticParams() {
 // 年齢を計算する関数
 function calculateAge(birthDate: string): number | null {
   if (!birthDate) return null;
-
   const today = new Date();
   const birth = new Date(birthDate);
-
   let age = today.getFullYear() - birth.getFullYear();
   const monthDiff = today.getMonth() - birth.getMonth();
-
+  
   // 誕生日がまだ来ていない場合は1を引く
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
     age--;
   }
-
+  
   return age;
 }
 
@@ -77,6 +77,7 @@ async function getPersonContents(personId: string) {
         },
       ],
     });
+
     return response.results;
   } catch (error) {
     console.error('Error fetching person contents:', error);
@@ -103,6 +104,7 @@ async function getRelatedContents(personCategories: string[], currentPersonId: s
         ],
         page_size: limit,
       });
+
       return response.results;
     }
 
@@ -147,7 +149,7 @@ async function getRelatedContents(personCategories: string[], currentPersonId: s
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const resolvedParams = await params;
   const person = await getPersonData(resolvedParams.id);
-
+  
   if (!person) {
     return {
       title: '人物が見つかりません',
@@ -162,9 +164,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const profileImage = properties['プロフィール画像']?.files[0]?.file?.url || properties['プロフィール画像']?.files[0]?.external?.url || '';
   const categories = properties['カテゴリ']?.multi_select || [];
   const birthDate = properties['生年月日']?.date?.start || '';
-
+  
   const categoryNames = categories.map((cat: any) => cat.name).join('、');
-
   const metaDescription = description ||
     `${name}のプロフィール。${categoryNames}として活躍。${birthDate ? `生年月日：${birthDate}。` : ''}出演コンテンツ一覧、口コミ、評価などの詳細情報をご覧いただけます。`;
 
@@ -197,13 +198,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function PersonPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const person = await getPersonData(resolvedParams.id);
-
+  
   if (!person) {
     notFound();
   }
-
+  
   const contents = await getPersonContents(resolvedParams.id);
-
+  
+  // ✅ アフィリエイト取得（NEW!）
+  const affiliates = await getAffiliatesByPath('/person/*');
+  
   // @ts-ignore
   const properties = person.properties;
   const name = properties['人名']?.title[0]?.plain_text || '名前なし';
@@ -215,17 +219,18 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   const birthplace = properties['出身']?.rich_text[0]?.plain_text || '';
   const height = properties['身長']?.number || null;
   const cupSize = properties['カップ数']?.select?.name || '';
-
+  
   // 年齢を計算
   const age = calculateAge(birthDate);
-
+  
   const categories = properties['カテゴリ']?.multi_select || [];
   const categoryNames = categories.map((cat: any) => cat.name);
+  
   const twitterUrl = properties['TwitterURL']?.url || '';
   const instagramUrl = properties['InstagramURL']?.url || '';
-
+  
   const relatedContents = await getRelatedContents(categoryNames, resolvedParams.id, 10);
-
+  
   // 構造化データ: Person型
   const personJsonLd = {
     '@context': 'https://schema.org',
@@ -243,7 +248,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
       fanzaLink,
     ].filter(Boolean),
   };
-
+  
   // 構造化データ: パンくずリスト
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
@@ -269,7 +274,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
       },
     ],
   };
-
+  
   // 構造化データ: 出演作品一覧（ItemList）
   const contentsItemListJsonLd = contents.length > 0 ? {
     '@context': 'https://schema.org',
@@ -282,8 +287,8 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
       item: {
         '@type': 'VideoObject',
         name: content.properties['タイトル']?.title[0]?.plain_text || '無題',
-        thumbnailUrl: content.properties['サムネイル']?.files[0]?.file?.url || 
-                     content.properties['サムネイル']?.files[0]?.external?.url || '',
+        thumbnailUrl: content.properties['サムネイル']?.files[0]?.file?.url ||
+                      content.properties['サムネイル']?.files[0]?.external?.url || '',
         uploadDate: content.properties['公開日']?.date?.start || '',
         url: `https://www.seifuku-jk.com/content/${content.id}`,
       },
@@ -342,7 +347,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
               {/* プロフィール詳細 */}
               <div className="flex-1">
                 <h1 className="text-4xl font-bold mb-4 text-black">{name}</h1>
-
+                
                 {/* カテゴリタグ */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   {categories.map((cat: any) => (
@@ -363,35 +368,35 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
                       <span className="font-semibold">生年月日:</span> {birthDate}
                     </p>
                   )}
-
+                  
                   {/* 年齢 */}
                   {age !== null && (
                     <p className="text-gray-700">
                       <span className="font-semibold">年齢:</span> {age}歳
                     </p>
                   )}
-
+                  
                   {/* 出身 */}
                   {birthplace && (
                     <p className="text-gray-700">
                       <span className="font-semibold">出身:</span> {birthplace}
                     </p>
                   )}
-
+                  
                   {/* 身長 */}
                   {height && (
                     <p className="text-gray-700">
                       <span className="font-semibold">身長:</span> {height}cm
                     </p>
                   )}
-
+                  
                   {/* カップ数 */}
                   {cupSize && (
                     <p className="text-gray-700">
                       <span className="font-semibold">カップ数:</span> {cupSize}カップ
                     </p>
                   )}
-
+                  
                   {/* スリーサイズ */}
                   {threeSizes && (
                     <p className="text-gray-700">
@@ -450,11 +455,20 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
             </div>
           </div>
 
+          {/* ✅ アフィリエイトウィジェット（出演コンテンツの上）*/}
+          {affiliates.map((affiliate) => (
+            <AffiliateWidget 
+              key={affiliate.id}
+              dataId={affiliate.dataId}
+            />
+          ))}
+
           {/* 出演コンテンツ一覧 */}
           <section className="mb-12">
             <h2 className="text-3xl font-bold mb-6 text-black">
               出演コンテンツ ({contents.length}件)
             </h2>
+            
             {contents.length === 0 ? (
               <p className="text-center text-gray-600 py-12">
                 まだコンテンツがありません
@@ -508,6 +522,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
             <h2 className="text-3xl font-bold mb-6 text-black">
               🔥 人気の作品
             </h2>
+            
             {relatedContents.length === 0 ? (
               <p className="text-center text-gray-600 py-12">
                 関連するコンテンツが見つかりませんでした

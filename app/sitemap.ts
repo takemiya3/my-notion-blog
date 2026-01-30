@@ -34,90 +34,121 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
+  const dynamicPages: MetadataRoute.Sitemap = [];
+
   try {
     // 人物ページを取得
-    const peopleResponse = await notion.databases.query({
-      database_id: process.env.NOTION_PEOPLE_DB_ID!,
-      filter: {
-        property: '公開ステータス',
-        checkbox: {
-          equals: true,
+    if (process.env.NOTION_PEOPLE_DB_ID) {
+      const peopleResponse = await notion.databases.query({
+        database_id: process.env.NOTION_PEOPLE_DB_ID,
+        filter: {
+          property: '公開ステータス',
+          checkbox: {
+            equals: true,
+          },
         },
-      },
-    });
+      });
 
-    const peoplePages: MetadataRoute.Sitemap = peopleResponse.results.map((person: any) => ({
-      url: `${baseUrl}/person/${person.id}`,
-      lastModified: new Date(person.last_edited_time),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    }));
-
-    // コンテンツページを取得
-    const contentsResponse = await notion.databases.query({
-      database_id: process.env.NOTION_CONTENT_DB_ID!,
-      filter: {
-        property: '公開ステータス',
-        checkbox: {
-          equals: true,
-        },
-      },
-    });
-
-    const contentPages: MetadataRoute.Sitemap = contentsResponse.results.map((content: any) => ({
-      url: `${baseUrl}/content/${content.id}`,
-      lastModified: new Date(content.last_edited_time),
-      changeFrequency: 'weekly' as const,
-      priority: 0.6,
-    }));
-
-    // ジャンルページを取得
-    const genresResponse = await notion.databases.query({
-      database_id: process.env.NOTION_GENRE_DB_ID!,
-      filter: {
-        property: '公開ステータス',
-        checkbox: {
-          equals: true,
-        },
-      },
-    });
-
-    const genrePages: MetadataRoute.Sitemap = genresResponse.results.map((genre: any) => ({
-      url: `${baseUrl}/genre/${genre.id}`,
-      lastModified: new Date(genre.last_edited_time),
-      changeFrequency: 'weekly' as const,
-      priority: 0.6,
-    }));
-
-    // ランキングページを取得
-    const rankingsResponse = await notion.databases.query({
-      database_id: process.env.NOTION_RANKING_DB_ID!,
-      filter: {
-        property: '公開ステータス',
-        checkbox: {
-          equals: true,
-        },
-      },
-    });
-
-    const rankingPages: MetadataRoute.Sitemap = rankingsResponse.results.map((ranking: any) => ({
-      url: `${baseUrl}/ranking/${ranking.id}`,
-      lastModified: new Date(ranking.last_edited_time),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    }));
-
-    // すべてのページを結合
-    return [
-      ...staticPages,
-      ...peoplePages,
-      ...contentPages,
-      ...genrePages,
-      ...rankingPages,
-    ];
+      peopleResponse.results.forEach((person: any) => {
+        dynamicPages.push({
+          url: `${baseUrl}/person/${person.id}`,
+          lastModified: new Date(person.last_edited_time),
+          changeFrequency: 'weekly',
+          priority: 0.7,
+        });
+      });
+      
+      console.log(`✅ 人物ページ: ${peopleResponse.results.length}件`);
+    }
   } catch (error) {
-    console.error('Error generating sitemap:', error);
-    // エラー時は静的ページのみ返す
-    return staticPages;
+    console.error('❌ 人物ページ取得エラー:', error);
   }
+
+  try {
+    // コンテンツページを取得
+    if (process.env.NOTION_CONTENT_DB_ID) {
+      const contentsResponse = await notion.databases.query({
+        database_id: process.env.NOTION_CONTENT_DB_ID,
+        filter: {
+          property: '公開ステータス',
+          checkbox: {
+            equals: true,
+          },
+        },
+      });
+
+      contentsResponse.results.forEach((content: any) => {
+        dynamicPages.push({
+          url: `${baseUrl}/content/${content.id}`,
+          lastModified: new Date(content.last_edited_time),
+          changeFrequency: 'weekly',
+          priority: 0.6,
+        });
+      });
+      
+      console.log(`✅ コンテンツページ: ${contentsResponse.results.length}件`);
+    }
+  } catch (error) {
+    console.error('❌ コンテンツページ取得エラー:', error);
+  }
+
+  try {
+    // ジャンルページを取得
+    if (process.env.NOTION_GENRE_DB_ID) {
+      const genresResponse = await notion.databases.query({
+        database_id: process.env.NOTION_GENRE_DB_ID,
+        filter: {
+          property: '公開ステータス',
+          checkbox: {
+            equals: true,
+          },
+        },
+      });
+
+      genresResponse.results.forEach((genre: any) => {
+        dynamicPages.push({
+          url: `${baseUrl}/genre/${genre.id}`,
+          lastModified: new Date(genre.last_edited_time),
+          changeFrequency: 'weekly',
+          priority: 0.6,
+        });
+      });
+      
+      console.log(`✅ ジャンルページ: ${genresResponse.results.length}件`);
+    }
+  } catch (error) {
+    console.error('❌ ジャンルページ取得エラー:', error);
+  }
+
+  try {
+    // ランキングページを取得
+    if (process.env.NOTION_RANKING_DB_ID) {
+      const rankingsResponse = await notion.databases.query({
+        database_id: process.env.NOTION_RANKING_DB_ID,
+        filter: {
+          property: '公開ステータス',
+          checkbox: {
+            equals: true,
+          },
+        },
+      });
+
+      rankingsResponse.results.forEach((ranking: any) => {
+        dynamicPages.push({
+          url: `${baseUrl}/ranking/${ranking.id}`,
+          lastModified: new Date(ranking.last_edited_time),
+          changeFrequency: 'weekly',
+          priority: 0.7,
+        });
+      });
+      
+      console.log(`✅ ランキングページ: ${rankingsResponse.results.length}件`);
+    }
+  } catch (error) {
+    console.error('❌ ランキングページ取得エラー:', error);
+  }
+
+  console.log(`📊 合計: ${staticPages.length + dynamicPages.length}ページ`);
+  
+  return [...staticPages, ...dynamicPages];
 }

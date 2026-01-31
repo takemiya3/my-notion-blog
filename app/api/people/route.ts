@@ -14,16 +14,16 @@ export async function GET() {
     const peopleWithImages = await Promise.all(
       response.results.map(async (person: any) => {
         try {
-          const pageDetails = await notion.pages.retrieve({ page_id: person.id });
+          const pageDetails = await notion.pages.retrieve({ page_id: person.id }) as any;
 
           if (pageDetails.properties?.['プロフィール画像']?.files?.[0]) {
             const file = pageDetails.properties['プロフィール画像'].files[0];
             if (file.file?.url) {
-  file.file.url = file.file.url.replace('http://', 'https://');
-}
-if (file.external?.url) {
-  file.external.url = file.external.url.replace('http://', 'https://');
-}
+              file.file.url = file.file.url.replace('http://', 'https://');
+            }
+            if (file.external?.url) {
+              file.external.url = file.external.url.replace('http://', 'https://');
+            }
           }
 
           return pageDetails;

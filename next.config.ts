@@ -21,11 +21,16 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '**.amazonaws.com',
+        hostname: '*.amazonaws.com',
       },
       {
         protocol: 'https',
         hostname: 'cdn.suruga-ya.jp',
+      },
+      // ✅ ここに追加！
+      {
+        protocol: 'https',
+        hostname: 'pics.dmm.co.jp',
       },
     ],
   },

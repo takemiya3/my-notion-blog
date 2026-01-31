@@ -27,9 +27,13 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'cdn.suruga-ya.jp',
       },
-      // ✅ ここに追加！
+      // ✅ https も http も両方許可
       {
         protocol: 'https',
+        hostname: 'pics.dmm.co.jp',
+      },
+      {
+        protocol: 'http',  // ← ここ追加！
         hostname: 'pics.dmm.co.jp',
       },
     ],

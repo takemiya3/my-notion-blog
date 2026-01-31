@@ -1,46 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { Client } from '@notionhq/client';
 
-const notion = new Client({ auth: process.env.NOTION_API_KEY });
-const databaseId = process.env.NOTION_PERSON_DB_ID!;
+const notion = new Client({ auth: process.env.NOTION_API_TOKEN });
+const PEOPLE_DB_ID = 'b070b2eb8ab24ebead49aeaedebf52e1';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    if (!process.env.NOTION_API_KEY) {
-      throw new Error('NOTION_API_KEY is not set');
-    }
-    if (!databaseId) {
-      throw new Error('NOTION_PERSON_DB_ID is not set');
-    }
+    const response = await notion.databases.query({
+      database_id: PEOPLE_DB_ID,
+      page_size: 100
+    });
 
-    const { searchParams } = new URL(request.url);
-    const categoryFilter = searchParams.get('category');
-    const limit = searchParams.get('limit');
+    const peopleWithImages = await Promise.all(
+      response.results.map(async (person: any) => {
+        try {
+          const pageDetails = await notion.pages.retrieve({ page_id: person.id });
 
-    const query: any = {
-      database_id: databaseId,
-    };
+          if (pageDetails.properties?.['プロフィール画像']?.files?.[0]) {
+            const file = pageDetails.properties['プロフィール画像'].files[0];
+            if (file.file?.url) {
+  file.file.url = file.file.url.replace('http://', 'https://');
+}
+if (file.external?.url) {
+  file.external.url = file.external.url.replace('http://', 'https://');
+}
+          }
 
-    if (categoryFilter) {
-      query.filter = {
-        property: 'カテゴリ',
-        multi_select: {
-          contains: categoryFilter
+          return pageDetails;
+        } catch (error) {
+          console.error(`Error fetching person page ${person.id}:`, error);
+          return person;
         }
-      };
-    }
+      })
+    );
 
-    if (limit) {
-      query.page_size = parseInt(limit, 10);
-    }
-
-    const response = await notion.databases.query(query);
-    return NextResponse.json(response.results);
+    return NextResponse.json(peopleWithImages);
   } catch (error) {
     console.error('Error fetching people:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch people', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch people' }, { status: 500 });
   }
 }

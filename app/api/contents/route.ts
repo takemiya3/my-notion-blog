@@ -1,46 +1,43 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { Client } from '@notionhq/client';
 
-const notion = new Client({ auth: process.env.NOTION_API_KEY });
-const databaseId = process.env.NOTION_CONTENT_DB_ID!;
+const notion = new Client({ auth: process.env.NOTION_API_TOKEN });
+const CONTENT_DB_ID = 'b070b2eb8ab24ebead49aeaedebf52e1';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    if (!process.env.NOTION_API_KEY) {
-      throw new Error('NOTION_API_KEY is not set');
-    }
-    if (!databaseId) {
-      throw new Error('NOTION_CONTENT_DB_ID is not set');
-    }
+    const response = await notion.databases.query({
+      database_id: CONTENT_DB_ID,
+      sorts: [{ property: '公開日', direction: 'descending' }],
+      page_size: 100
+    });
 
-    const { searchParams } = new URL(request.url);
-    const categoryFilter = searchParams.get('category');
-    const limit = searchParams.get('limit');
+    const contentsWithImages = await Promise.all(
+      response.results.map(async (content: any) => {
+        try {
+          const pageDetails = await notion.pages.retrieve({ page_id: content.id });
 
-    const query: any = {
-      database_id: databaseId,
-    };
+          if (pageDetails.properties?.['サムネイル']?.files?.[0]) {
+            const file = pageDetails.properties['サムネイル'].files[0];
+            if (file.file?.url) {
+              file.file.url = file.file.url.replace('http://', 'https://');
+            }
+            if (file.external?.url) {
+              file.external.url = file.external.url.replace('http://', 'https://');
+            }
+          }
 
-    if (categoryFilter) {
-      query.filter = {
-        property: 'カテゴリ',
-        multi_select: {
-          contains: categoryFilter
+          return pageDetails;
+        } catch (error) {
+          console.error(`Error fetching content page ${content.id}:`, error);
+          return content;
         }
-      };
-    }
+      })
+    );
 
-    if (limit) {
-      query.page_size = parseInt(limit, 10);
-    }
-
-    const response = await notion.databases.query(query);
-    return NextResponse.json(response.results);
+    return NextResponse.json(contentsWithImages);
   } catch (error) {
     console.error('Error fetching contents:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch contents', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch contents' }, { status: 500 });
   }
 }

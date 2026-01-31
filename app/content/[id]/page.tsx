@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import AffiliateWidget from '@/components/AffiliateWidget';
 import Footer from '@/components/Footer';
 import ReviewSection from '@/components/ReviewSection';
 import { Client } from '@notionhq/client';
@@ -117,7 +116,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   // @ts-ignore
   const properties = content.properties;
   const title = properties['タイトル']?.title[0]?.plain_text || '無題';
-  const description = properties['説明文']?.rich_text[0]?.plain_text || '';
+  const description = properties['概要文']?.rich_text[0]?.plain_text || properties['説明文']?.rich_text[0]?.plain_text || '';
   const thumbnail = properties['サムネイル']?.files[0]?.file?.url || properties['サムネイル']?.files[0]?.external?.url || '';
   const releaseDate = properties['公開日']?.date?.start || '';
   const categories = properties['カテゴリ']?.multi_select || [];
@@ -169,19 +168,18 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
 
   // @ts-ignore
   const properties = content.properties;
+  
   const title = properties['タイトル']?.title[0]?.plain_text || '無題';
   const thumbnail = properties['サムネイル']?.files[0]?.file?.url || properties['サムネイル']?.files[0]?.external?.url || '';
-  const description = properties['説明文']?.rich_text[0]?.plain_text || '';
+  const description = properties['概要文']?.rich_text[0]?.plain_text || properties['説明文']?.rich_text[0]?.plain_text || '';
+  const performerNamesText = properties['出演者名']?.rich_text[0]?.plain_text || '';
   const releaseDate = properties['公開日']?.date?.start || '';
   const views = properties['閲覧数']?.number || 0;
-  const videoUrl = properties['動画URL']?.url || null;
+  const affiliateUrl = properties['アフィリエイトURL']?.url || '';
   const categories = properties['カテゴリ']?.multi_select || [];
   const category = categories[0]?.name || '';
   const genre = properties['ジャンル']?.select?.name || '';
   const performerRelations = properties['出演者']?.relation || [];
-
-  const rawHTML = properties['アフィリエイトHTML']?.rich_text?.[0]?.plain_text || '';
-  const affiliateHTML = rawHTML.replace(/\\\\/g, '');
 
   const sampleImages = properties['サンプル画像']?.files?.map(
     (file: any) => file.file?.url || file.external?.url
@@ -271,14 +269,23 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
                 )}
 
                 {/* サンプル画像ギャラリー */}
-                <div className="mb-6">
-                  <SampleImageGallery images={sampleImages} />
-                </div>
+                {sampleImages.length > 0 && (
+                  <div className="mb-6">
+                    <SampleImageGallery images={sampleImages} />
+                  </div>
+                )}
 
-                {/* アフィリエイトウィジェット */}
-                {affiliateHTML && (
+                {/* アフィリエイトボタン */}
+                {affiliateUrl && (
                   <div className="sticky top-4">
-                    <AffiliateWidget html={affiliateHTML} />
+                    <a
+                      href={affiliateUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 text-center shadow-lg hover:shadow-xl"
+                    >
+                      🎬 動画をチェック
+                    </a>
                   </div>
                 )}
               </div>
@@ -311,36 +318,27 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
                   <p className="text-gray-700 flex items-center gap-2">
                     <span className="font-semibold">👁 閲覧数:</span> {views.toLocaleString()}
                   </p>
+                  {performerNamesText && (
+                    <p className="text-gray-700 flex items-center gap-2">
+                      <span className="font-semibold">👥 出演者:</span> {performerNamesText}
+                    </p>
+                  )}
                 </div>
 
-                {/* 説明文 */}
+                {/* 概要文 */}
                 {description && (
                   <div className="mb-6">
-                    <h2 className="text-xl font-bold mb-3 text-black">📝 説明</h2>
+                    <h2 className="text-xl font-bold mb-3 text-black">📝 概要</h2>
                     <p className="text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">
                       {description}
                     </p>
-                  </div>
-                )}
-
-                {/* 動画URLボタン */}
-                {videoUrl && (
-                  <div className="mt-6">
-                    <a
-                      href={videoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block w-full md:w-auto bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 text-center shadow-lg hover:shadow-xl"
-                    >
-                      🎬 動画を見る
-                    </a>
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* 出演者一覧 */}
+          {/* 出演者一覧（リレーションから） */}
           {performers.length > 0 && (
             <section className="mb-12">
               <h2 className="text-2xl md:text-3xl font-bold mb-6 text-black">

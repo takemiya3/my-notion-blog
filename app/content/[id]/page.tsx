@@ -138,7 +138,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     openGraph: {
       title: `${title} - 放課後制服動画ナビ`,
       description: metaDescription.slice(0, 160),
-      url: `https://seifuku-jk.com/content/${resolvedParams.id}`,
+      url: `{{https://seifuku-jk.com/content/${resolvedParams.id}}}`,
       type: 'video.other',
       images: thumbnail ? [
         {
@@ -168,9 +168,42 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
 
   // @ts-ignore
   const properties = content.properties;
-  
+
+  // ✅ デバッグ：プロパティ名を全て確認
+  console.log('=== 全プロパティ名 ===');
+  console.log(Object.keys(properties));
+
+  // ✅ サムネイルの詳細情報
+  console.log('\n=== サムネイル詳細 ===');
+  console.log(JSON.stringify(properties['サムネイル'], null, 2));
+
+  // ✅ サンプル画像の詳細情報
+  console.log('\n=== サンプル画像詳細 ===');
+  console.log(JSON.stringify(properties['サンプル画像'], null, 2));
+
   const title = properties['タイトル']?.title[0]?.plain_text || '無題';
-  const thumbnail = properties['サムネイル']?.files[0]?.file?.url || properties['サムネイル']?.files[0]?.external?.url || '';
+
+  // 複数のパターンで画像URLを取得してみる
+  const thumbnail =
+    properties['サムネイル']?.files?.[0]?.file?.url ||
+    properties['サムネイル']?.files?.[0]?.external?.url ||
+    properties['サムネイル']?.url ||
+    '';
+
+  console.log('\n取得したサムネイルURL:', thumbnail);
+
+  const sampleImages = properties['サンプル画像']?.files?.map(
+    (file: any) => {
+      const url = file.file?.url || file.external?.url || file.url;
+      console.log('サンプル画像URL:', url);
+      return url;
+    }
+  ).filter(Boolean) || [];
+
+  console.log('\nサンプル画像配列:', sampleImages);
+  console.log('サンプル画像件数:', sampleImages.length);
+  console.log('================================\n');
+
   const description = properties['概要文']?.rich_text[0]?.plain_text || properties['説明文']?.rich_text[0]?.plain_text || '';
   const performerNamesText = properties['出演者名']?.rich_text[0]?.plain_text || '';
   const releaseDate = properties['公開日']?.date?.start || '';
@@ -180,10 +213,6 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
   const category = categories[0]?.name || '';
   const genre = properties['ジャンル']?.select?.name || '';
   const performerRelations = properties['出演者']?.relation || [];
-
-  const sampleImages = properties['サンプル画像']?.files?.map(
-    (file: any) => file.file?.url || file.external?.url
-  ).filter(Boolean) || [];
 
   const performerIds = performerRelations.map((rel: any) => rel.id);
   const performers = await getPerformers(performerIds);
@@ -197,7 +226,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
     description: description,
     thumbnailUrl: thumbnail,
     uploadDate: releaseDate,
-    contentUrl: `https://seifuku-jk.com/content/${resolvedParams.id}`,
+    contentUrl: `{{https://seifuku-jk.com/content/${resolvedParams.id}}}`,
     interactionStatistic: {
       '@type': 'InteractionCounter',
       interactionType: { '@type': 'WatchAction' },
@@ -206,7 +235,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
     actor: performers.map(performer => ({
       '@type': 'Person',
       name: performer.name,
-      url: `https://seifuku-jk.com/person/${performer.id}`,
+      url: `{{https://seifuku-jk.com/person/${performer.id}}}`,
     })),
   };
 
@@ -224,7 +253,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
         '@type': 'ListItem',
         position: 2,
         name: title,
-        item: `https://seifuku-jk.com/content/${resolvedParams.id}`,
+        item: `{{https://seifuku-jk.com/content/${resolvedParams.id}}}`,
       },
     ],
   };
@@ -234,11 +263,11 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
       {/* 構造化データを追加 */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{__html: JSON.stringify(contentJsonLd)}}
+        dangerouslySetInnerHTML=177
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{__html: JSON.stringify(breadcrumbJsonLd)}}
+        dangerouslySetInnerHTML=178
       />
 
       <div className="min-h-screen bg-gray-50 py-8">

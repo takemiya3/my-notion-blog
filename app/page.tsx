@@ -517,7 +517,7 @@ export default function Home() {
               <p className="text-gray-500 text-center py-8">該当する人物が見つかりませんでした</p>
             ) : (
               <>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {filteredPeople.slice(0, displayedPeopleCount).map((person: Person) => {
                     const personId = person.id;
                     const name = person.properties['人名']?.title[0]?.plain_text || '名前なし';

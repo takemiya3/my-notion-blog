@@ -85,10 +85,40 @@ async function getPersonContents(personId: string) {
   }
 }
 
-async function getRelatedContents(personCategories: string[], currentPersonId: string, limit: number = 10) {
+// ✅ ランダム表示対応の関連コンテンツ取得関数
+async function getRelatedContents(personId: string, limit: number = 10) {
   try {
-    if (!personCategories || personCategories.length === 0) {
-      const response = await notion.databases.query({
+    // まずその女優の出演作品を取得（limit * 3件でプールを作る）
+    let response = await notion.databases.query({
+      database_id: process.env.NOTION_CONTENT_DB_ID!,
+      filter: {
+        and: [
+          {
+            property: '公開ステータス',
+            checkbox: {
+              equals: true,
+            },
+          },
+          {
+            property: '出演者',
+            relation: {
+              contains: personId,
+            },
+          },
+        ],
+      },
+      sorts: [
+        {
+          property: '閲覧数',
+          direction: 'descending',
+        },
+      ],
+      page_size: limit * 3,
+    });
+
+    // 結果が少ない場合は、全体から閲覧数順で取得
+    if (response.results.length <= limit) {
+      response = await notion.databases.query({
         database_id: process.env.NOTION_CONTENT_DB_ID!,
         filter: {
           property: '公開ステータス',
@@ -102,44 +132,19 @@ async function getRelatedContents(personCategories: string[], currentPersonId: s
             direction: 'descending',
           },
         ],
-        page_size: limit,
+        page_size: limit * 3,
       });
-
-      return response.results;
     }
 
-    const categoryFilters = personCategories.map(category => ({
-      property: 'カテゴリ',
-      multi_select: {
-        contains: category,
-      },
-    }));
+    // Fisher-Yatesシャッフルアルゴリズムでランダムに並び替え
+    const shuffled = [...response.results];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
 
-    const response = await notion.databases.query({
-      database_id: process.env.NOTION_CONTENT_DB_ID!,
-      filter: {
-        and: [
-          {
-            property: '公開ステータス',
-            checkbox: {
-              equals: true,
-            },
-          },
-          {
-            or: categoryFilters,
-          },
-        ],
-      },
-      sorts: [
-        {
-          property: '閲覧数',
-          direction: 'descending',
-        },
-      ],
-      page_size: limit,
-    });
-
-    return response.results;
+    // limit件だけ取り出す
+    return shuffled.slice(0, limit);
   } catch (error) {
     console.error('Error fetching related contents:', error);
     return [];
@@ -205,7 +210,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   
   const contents = await getPersonContents(resolvedParams.id);
   
-  // ✅ アフィリエイト取得（NEW!）
+  // ✅ アフィリエイト取得
   const affiliates = await getAffiliatesByPath('/person/*');
   
   // @ts-ignore
@@ -224,12 +229,12 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   const age = calculateAge(birthDate);
   
   const categories = properties['カテゴリ']?.multi_select || [];
-  const categoryNames = categories.map((cat: any) => cat.name);
   
   const twitterUrl = properties['TwitterURL']?.url || '';
   const instagramUrl = properties['InstagramURL']?.url || '';
   
-  const relatedContents = await getRelatedContents(categoryNames, resolvedParams.id, 10);
+  // ✅ ランダム表示対応の関連コンテンツ取得
+  const relatedContents = await getRelatedContents(resolvedParams.id, 10);
   
   // 構造化データ: Person型
   const personJsonLd = {

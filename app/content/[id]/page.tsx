@@ -50,6 +50,7 @@ async function getRelatedContents(
   limit: number = 10
 ) {
   try {
+    // まず、カテゴリ/ジャンルで絞り込んで取得
     const filters: any[] = [
       {
         property: '公開ステータス',
@@ -85,7 +86,7 @@ async function getRelatedContents(
       });
     }
 
-    const response = await notion.databases.query({
+    let response = await notion.databases.query({
       database_id: process.env.NOTION_CONTENT_DB_ID!,
       filter: {
         and: filters,
@@ -96,22 +97,40 @@ async function getRelatedContents(
           direction: 'descending',
         },
       ],
-      page_size: limit * 3, // ✅ 3倍の件数を取得してランダム選択
+      page_size: limit * 3,
     });
 
-    // ✅ 現在のコンテンツを除外
+    // ✅ フォールバック：一致するコンテンツが少ない場合、全コンテンツから取得
+    if (response.results.length < limit + 1) {
+      response = await notion.databases.query({
+        database_id: process.env.NOTION_CONTENT_DB_ID!,
+        filter: {
+          property: '公開ステータス',
+          checkbox: {
+            equals: true,
+          },
+        },
+        sorts: [
+          {
+            property: '閲覧数',
+            direction: 'descending',
+          },
+        ],
+        page_size: limit * 3,
+      });
+    }
+
     const filteredContents = response.results.filter(
       (content: any) => content.id !== currentContentId
     );
 
-    // ✅ Fisher-Yates シャッフルアルゴリズムでランダム化
+    // Fisher-Yates シャッフル
     const shuffled = [...filteredContents];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
-    // ✅ 指定件数だけ返す
     return shuffled.slice(0, limit);
   } catch (error) {
     console.error('Error fetching related contents:', error);

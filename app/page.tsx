@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image'; 
 import Loading from '@/components/Loading';
 import Script from 'next/script';
 
@@ -498,92 +499,107 @@ export default function Home() {
           )}
 
           {/* 人物一覧 */}
-          <section ref={peopleListRef} className="mb-12">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-black">
-                女優一覧 ({filteredPeople.length}件)
-              </h2>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-black">並び替え:</span>
-                <select
-                  value={peopleSort}
-                  onChange={(e) => setPeopleSort(e.target.value as SortOption)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500 text-black"
-                >
-                  <option value="name">名前順</option>
-                  <option value="newest">生年月日(新しい順)</option>
-                  <option value="random">ランダム</option>
-                </select>
-              </div>
-            </div>
-            {filteredPeople.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">該当する人物が見つかりませんでした</p>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                  {filteredPeople.slice(0, displayedPeopleCount).map((person: Person) => {
-                    const personId = person.id;
-                    const name = person.properties['人名']?.title[0]?.plain_text || '名前なし';
-                    const profileImage = person.properties['プロフィール画像']?.files[0]?.file?.url || person.properties['プロフィール画像']?.files[0]?.external?.url || '';
-                    const personCategories = person.properties['カテゴリ']?.multi_select || [];
-                    const fanzaLink = person.properties['FANZAリンク']?.url || '';
+<section ref={peopleListRef} className="mb-12">
+  <div className="flex justify-between items-center mb-4">
+    <h2 className="text-2xl font-bold text-black">
+      女優一覧 ({filteredPeople.length}件)
+    </h2>
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-black">並び替え:</span>
+      <select
+        value={peopleSort}
+        onChange={(e) => setPeopleSort(e.target.value as SortOption)}
+        className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500 text-black"
+      >
+        <option value="name">名前順</option>
+        <option value="newest">生年月日(新しい順)</option>
+        <option value="random">ランダム</option>
+      </select>
+    </div>
+  </div>
+  {filteredPeople.length === 0 ? (
+    <p className="text-gray-500 text-center py-8">該当する人物が見つかりませんでした</p>
+  ) : (
+    <>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        {filteredPeople.slice(0, displayedPeopleCount).map((person: Person) => {
+          const personId = person.id;
+          const name = person.properties['人名']?.title[0]?.plain_text || '名前なし';
+          const profileImage = person.properties['プロフィール画像']?.files[0]?.file?.url || person.properties['プロフィール画像']?.files[0]?.external?.url || '';
+          const personCategories = person.properties['カテゴリ']?.multi_select || [];
+          const fanzaLink = person.properties['FANZAリンク']?.url || '';
 
-                    return (
-                      <div
-                        key={personId}
-                        className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4"
-                      >
-                        <Link href={`/person/${personId}`}>
-                          {profileImage && (
-                            <img
-                              src={profileImage}
-                              alt={name}
-                              className="w-full h-48 object-cover rounded-lg mb-3"
-                            />
-                          )}
-                          <h3 className="font-bold text-lg mb-2 text-gray-900">{name}</h3>
-                          <div className="flex flex-wrap gap-1 mb-3">
-                            {personCategories.map((cat: any) => (
-                              <span
-                                key={cat.name}
-                                className="px-2 py-1 bg-pink-100 text-pink-600 rounded text-xs"
-                              >
-                                {cat.name}
-                              </span>
-                            ))}
-                          </div>
-                        </Link>
-
-                        {fanzaLink && (
-                          <a
-                            href={fanzaLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block w-full py-2 px-4 bg-gradient-to-r from-pink-500 to-red-500 text-white text-center font-bold rounded-lg hover:from-pink-600 hover:to-red-600 transition-all shadow-md hover:shadow-lg"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            🎬 動画をチェック
-                          </a>
-                        )}
-                      </div>
-                    );
-                  })}
+          return (
+            <div
+              key={personId}
+              className="bg-white rounded-lg shadow hover:shadow-xl transition-all overflow-hidden group"
+            >
+              <Link href={`/person/${personId}`}>
+                {/* プロフィール画像 */}
+                <div className="relative aspect-[3/4] overflow-hidden bg-gray-200">
+                  {profileImage ? (
+                    <Image
+                      src={profileImage}
+                      alt={name}
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                      <span className="text-4xl">👤</span>
+                    </div>
+                  )}
                 </div>
 
-                {/* 続きを見るボタン */}
-                {filteredPeople.length > displayedPeopleCount && (
-                  <div className="text-center mt-8">
-                    <button
-                      onClick={() => setDisplayedPeopleCount(prev => prev + 10)}
-                      className="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-lg shadow transition-colors"
-                    >
-                      続きを見る ({filteredPeople.length - displayedPeopleCount}件)
-                    </button>
+                {/* 名前とカテゴリ */}
+                <div className="p-4">
+                  <h3 className="font-bold text-lg mb-2 text-gray-900 line-clamp-2 min-h-[3.5rem]">{name}</h3>
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {personCategories.slice(0, 3).map((cat: any) => (
+                      <span
+                        key={cat.name}
+                        className="px-2 py-1 bg-pink-100 text-pink-600 rounded text-xs"
+                      >
+                        {cat.name}
+                      </span>
+                    ))}
                   </div>
-                )}
-              </>
-            )}
-          </section>
+                </div>
+              </Link>
+
+              {/* FANZAリンクボタン */}
+              {fanzaLink && (
+                <div className="px-4 pb-4">
+                  <a
+                    href={fanzaLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full py-2 px-4 bg-gradient-to-r from-pink-500 to-red-500 text-white text-center font-bold rounded-lg hover:from-pink-600 hover:to-red-600 transition-all shadow-md hover:shadow-lg text-sm"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    🎬 動画をチェック
+                  </a>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 続きを見るボタン */}
+      {filteredPeople.length > displayedPeopleCount && (
+        <div className="text-center mt-8">
+          <button
+            onClick={() => setDisplayedPeopleCount(prev => prev + 10)}
+            className="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-lg shadow transition-colors"
+          >
+            続きを見る ({filteredPeople.length - displayedPeopleCount}件)
+          </button>
+        </div>
+      )}
+    </>
+  )}
+</section>
 
           {/* コンテンツ一覧 */}
           <section>

@@ -4,11 +4,15 @@ import { Client } from '@notionhq/client';
 const notion = new Client({ auth: process.env.NOTION_API_TOKEN });
 const CONTENT_DB_ID = 'f0c63b2acda54155a4110980219c6a2f';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // URLパラメータからlimitを取得（デフォルト100）
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get('limit') || '100');
+
     const response = await notion.databases.query({
       database_id: CONTENT_DB_ID,
-      page_size: 100
+      page_size: Math.min(limit, 100) // Notion APIの上限は100
     });
 
     const contentsWithImages = await Promise.all(

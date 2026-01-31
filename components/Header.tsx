@@ -28,7 +28,7 @@ export default function Header() {
   </Link>
   <Link href="/people" className="text-gray-600 hover:text-pink-600 transition-colors font-medium">
     女優一覧
-  </Link>
+  </Link> 
   <Link href="/genres" className="text-gray-600 hover:text-pink-600 transition-colors font-medium">
     ジャンル
   </Link>

@@ -12,7 +12,7 @@ type Category = {
   name: string;
   color: string;
 };
-type SortOption = 'newest' | 'popular' | 'sales' | 'name';
+type SortOption = 'newest' | 'popular' | 'sales' | 'name' | 'random';
 
 export default function Home() {
   const [people, setPeople] = useState<Person[]>([]);
@@ -25,7 +25,7 @@ export default function Home() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showDetailSearchModal, setShowDetailSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [contentSort, setContentSort] = useState<SortOption>('newest');
+  const [contentSort, setContentSort] = useState<SortOption>('random'); // デフォルトをrandomに変更
   const [peopleSort, setPeopleSort] = useState<SortOption>('name');
   const [loading, setLoading] = useState(true);
   const [displayedPeopleCount, setDisplayedPeopleCount] = useState(10);
@@ -82,10 +82,22 @@ export default function Home() {
     filterAndSortData(selectedCategories, selectedGenre, searchQuery, peopleSort, contentSort);
   }, [selectedCategories, selectedGenre, searchQuery, peopleSort, contentSort, people, contents]);
 
+  // ランダムシャッフル関数
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
   const sortPeople = (peopleList: Person[], sortOption: SortOption): Person[] => {
     const sorted = [...peopleList];
 
     switch (sortOption) {
+      case 'random':
+        return shuffleArray(sorted);
       case 'name':
         return sorted.sort((a, b) => {
           const nameA = a.properties['人名']?.title[0]?.plain_text || '';
@@ -107,6 +119,8 @@ export default function Home() {
     const sorted = [...contentsList];
 
     switch (sortOption) {
+      case 'random':
+        return shuffleArray(sorted);
       case 'newest':
         return sorted.sort((a, b) => {
           const dateA = a.properties['公開日']?.date?.start || '0000-00-00';
@@ -498,6 +512,7 @@ export default function Home() {
                 >
                   <option value="name">名前順</option>
                   <option value="newest">生年月日(新しい順)</option>
+                  <option value="random">ランダム</option>
                 </select>
               </div>
             </div>
@@ -583,6 +598,7 @@ export default function Home() {
                   onChange={(e) => setContentSort(e.target.value as SortOption)}
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500 text-black"
                 >
+                  <option value="random">ランダム</option>
                   <option value="newest">新着順</option>
                   <option value="popular">人気順(閲覧数)</option>
                   <option value="sales">売上順</option>

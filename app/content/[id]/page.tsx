@@ -43,7 +43,6 @@ async function getPerformers(performerIds: string[]) {
   }
 }
 
-// 関連する人気コンテンツを取得
 async function getRelatedContents(category: string, genre: string, currentContentId: string, limit: number = 10) {
   try {
     const filters: any[] = [
@@ -55,7 +54,6 @@ async function getRelatedContents(category: string, genre: string, currentConten
       },
     ];
 
-    // カテゴリまたはジャンルでフィルタリング
     const categoryGenreFilters: any[] = [];
 
     if (category) {
@@ -96,7 +94,6 @@ async function getRelatedContents(category: string, genre: string, currentConten
       page_size: limit + 1,
     });
 
-    // 自分自身を除外
     const relatedContents = response.results.filter((content: any) => content.id !== currentContentId);
 
     return relatedContents.slice(0, limit);
@@ -106,7 +103,6 @@ async function getRelatedContents(category: string, genre: string, currentConten
   }
 }
 
-// メタデータ生成関数
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const resolvedParams = await params;
   const content = await getContentData(resolvedParams.id);
@@ -127,15 +123,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const categories = properties['カテゴリ']?.multi_select || [];
   const performerRelations = properties['出演者']?.relation || [];
 
-  // 出演者名を取得
   const performerIds = performerRelations.map((rel: any) => rel.id);
   const performers = await getPerformers(performerIds);
   const performerNames = performers.map(p => p.name).join('、');
 
-  // カテゴリを文字列化
   const categoryNames = categories.map((cat: any) => cat.name).join('、');
 
-  // descriptionを生成（説明文がない場合は自動生成）
   const metaDescription = description ||
     `${title}${performerNames ? ` - ${performerNames}が出演。` : '。'}${categoryNames ? `カテゴリ：${categoryNames}。` : ''}${releaseDate ? `公開日：${releaseDate}。` : ''}口コミ、評価などの詳細情報をご覧いただけます。`;
 
@@ -187,31 +180,18 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
   const genre = properties['ジャンル']?.select?.name || '';
   const performerRelations = properties['出演者']?.relation || [];
 
-// ✅ デバッグログを追加
-console.log('=== アフィリエイトHTML デバッグ ===');
-console.log('生データ:', JSON.stringify(properties['アフィリエイトHTML'], null, 2));
+  const rawHTML = properties['アフィリエイトHTML']?.rich_text?.[0]?.plain_text || '';
+  const affiliateHTML = rawHTML.replace(/\\\\/g, '');
 
-const rawHTML = properties['アフィリエイトHTML']?.rich_text?.[0]?.plain_text || '';
-console.log('取得したHTML（処理前）:', rawHTML);
-
-const affiliateHTML = rawHTML.replace(/\\/g, '');
-console.log('処理後のHTML:', affiliateHTML);
-console.log('HTMLの長さ:', affiliateHTML.length);
-console.log('=================================');
-
-// サンプル画像を取得
-const sampleImages = properties['サンプル画像']?.files?.map(
+  const sampleImages = properties['サンプル画像']?.files?.map(
     (file: any) => file.file?.url || file.external?.url
   ).filter(Boolean) || [];
 
-  // 出演者情報を取得
   const performerIds = performerRelations.map((rel: any) => rel.id);
   const performers = await getPerformers(performerIds);
 
-  // 関連する人気コンテンツを取得
-  const relatedContents = await getRelatedContents(category, genre, resolvedParams.id, 10);
+  const relatedContents = await getRelatedContents(category, genre, resolvedParams.id, 8);
 
-  // 構造化データを生成
   const contentJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'VideoObject',
@@ -232,7 +212,6 @@ const sampleImages = properties['サンプル画像']?.files?.map(
     })),
   };
 
-  // パンくずリストの構造化データ
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -265,7 +244,7 @@ const sampleImages = properties['サンプル画像']?.files?.map(
       />
 
       <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-5xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4">
           {/* パンくずリスト */}
           <nav className="mb-6 text-sm text-gray-600">
             <Link href="/" className="hover:text-pink-500">ホーム</Link>
@@ -274,38 +253,42 @@ const sampleImages = properties['サンプル画像']?.files?.map(
           </nav>
 
           {/* コンテンツ情報 */}
-          <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-            <div className="flex flex-col md:flex-row gap-8">
-              {/* サムネイル */}
-              {thumbnail && (
-                <div className="flex-shrink-0">
-                  <Image
-                    src={thumbnail}
-                    alt={`${title}のサムネイル`}
-                    width={400}
-                    height={300}
-                    className="w-full md:w-96 h-auto object-cover rounded-lg shadow-md"
-                    priority
-                  />
+          <div className="bg-white rounded-lg shadow-lg p-6 md:p-8 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* 左側：サムネイルとアフィリエイト */}
+              <div className="lg:col-span-1">
+                {thumbnail && (
+                  <div className="mb-6">
+                    <Image
+                      src={thumbnail}
+                      alt={`${title}のサムネイル`}
+                      width={400}
+                      height={600}
+                      className="w-full h-auto object-cover rounded-lg shadow-md"
+                      priority
+                    />
+                  </div>
+                )}
 
-                  {/* サンプル画像ギャラリー */}
+                {/* サンプル画像ギャラリー */}
+                <div className="mb-6">
                   <SampleImageGallery images={sampleImages} />
-
-                  {/* アフィリエイトウィジェット */}
-                  {affiliateHTML && (
-                    <div className="mt-4">
-                      <AffiliateWidget html={affiliateHTML} />
-                    </div>
-                  )}
                 </div>
-              )}
 
-              {/* コンテンツ詳細 */}
-              <div className="flex-1">
-                <h1 className="text-4xl font-bold mb-4 text-black">{title}</h1>
+                {/* アフィリエイトウィジェット */}
+                {affiliateHTML && (
+                  <div className="sticky top-4">
+                    <AffiliateWidget html={affiliateHTML} />
+                  </div>
+                )}
+              </div>
+
+              {/* 右側：コンテンツ詳細 */}
+              <div className="lg:col-span-2">
+                <h1 className="text-3xl md:text-4xl font-bold mb-4 text-black leading-tight">{title}</h1>
 
                 {/* カテゴリタグ */}
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-6">
                   {categories.map((cat: any) => (
                     <span key={cat.name} className="px-3 py-1 bg-purple-100 text-purple-600 rounded-full text-sm font-semibold">
                       {cat.name}
@@ -319,22 +302,25 @@ const sampleImages = properties['サンプル画像']?.files?.map(
                 </div>
 
                 {/* メタ情報 */}
-                <div className="space-y-2 mb-6">
+                <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-2">
                   {releaseDate && (
-                    <p className="text-gray-700">
+                    <p className="text-gray-700 flex items-center gap-2">
                       <span className="font-semibold">📅 公開日:</span> {releaseDate}
                     </p>
                   )}
-                  <p className="text-gray-700">
+                  <p className="text-gray-700 flex items-center gap-2">
                     <span className="font-semibold">👁 閲覧数:</span> {views.toLocaleString()}
                   </p>
                 </div>
 
                 {/* 説明文 */}
                 {description && (
-                  <p className="text-gray-700 leading-relaxed mb-6 whitespace-pre-wrap">
-                    {description}
-                  </p>
+                  <div className="mb-6">
+                    <h2 className="text-xl font-bold mb-3 text-black">📝 説明</h2>
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">
+                      {description}
+                    </p>
+                  </div>
                 )}
 
                 {/* 動画URLボタン */}
@@ -344,9 +330,9 @@ const sampleImages = properties['サンプル画像']?.files?.map(
                       href={videoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200"
+                      className="inline-block w-full md:w-auto bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 text-center shadow-lg hover:shadow-xl"
                     >
-                      動画を見る
+                      🎬 動画を見る
                     </a>
                   </div>
                 )}
@@ -357,17 +343,17 @@ const sampleImages = properties['サンプル画像']?.files?.map(
           {/* 出演者一覧 */}
           {performers.length > 0 && (
             <section className="mb-12">
-              <h2 className="text-3xl font-bold mb-6 text-black">
-                出演者 ({performers.length}名)
+              <h2 className="text-2xl md:text-3xl font-bold mb-6 text-black">
+                👥 出演者 ({performers.length}名)
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {performers.map((performer) => (
                   <Link
                     key={performer.id}
                     href={`/person/${performer.id}`}
-                    className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow text-center"
+                    className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-all hover:scale-105 text-center"
                   >
-                    <p className="font-bold text-black">{performer.name}</p>
+                    <p className="font-bold text-black text-sm">{performer.name}</p>
                   </Link>
                 ))}
               </div>
@@ -376,15 +362,15 @@ const sampleImages = properties['サンプル画像']?.files?.map(
 
           {/* 人気の作品セクション */}
           <section className="mb-12">
-            <h2 className="text-3xl font-bold mb-6 text-black">
+            <h2 className="text-2xl md:text-3xl font-bold mb-6 text-black">
               🔥 人気の作品
             </h2>
             {relatedContents.length === 0 ? (
-              <p className="text-center text-gray-600 py-12">
+              <p className="text-center text-gray-600 py-12 bg-white rounded-lg">
                 関連するコンテンツが見つかりませんでした
               </p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
                 {relatedContents.map((relatedContent: any) => {
                   const contentId = relatedContent.id;
                   const contentTitle = relatedContent.properties['タイトル']?.title[0]?.plain_text || '無題';
@@ -395,23 +381,25 @@ const sampleImages = properties['サンプル画像']?.files?.map(
                     <Link
                       key={contentId}
                       href={`/content/${contentId}`}
-                      className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden"
+                      className="bg-white rounded-lg shadow hover:shadow-xl transition-all hover:scale-105 overflow-hidden group"
                     >
                       {contentThumbnail && (
-                        <Image
-                          src={contentThumbnail}
-                          alt={contentTitle}
-                          width={200}
-                          height={150}
-                          className="w-full h-32 object-cover"
-                        />
+                        <div className="relative aspect-[3/4] overflow-hidden">
+                          <Image
+                            src={contentThumbnail}
+                            alt={contentTitle}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                        </div>
                       )}
                       <div className="p-3">
-                        <h3 className="font-bold text-sm mb-1 line-clamp-2 text-black">
+                        <h3 className="font-bold text-sm mb-2 line-clamp-2 text-black min-h-[2.5rem]">
                           {contentTitle}
                         </h3>
-                        <p className="text-xs text-gray-600">
-                          👁 {contentViews.toLocaleString()}
+                        <p className="text-xs text-gray-600 flex items-center gap-1">
+                          <span>👁</span>
+                          <span>{contentViews.toLocaleString()}</span>
                         </p>
                       </div>
                     </Link>

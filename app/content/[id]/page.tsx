@@ -263,11 +263,11 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
       {/* 構造化データを追加 */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML=177
+        dangerouslySetInnerHTML={{__html: JSON.stringify(contentJsonLd)}}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML=178
+        dangerouslySetInnerHTML={{__html: JSON.stringify(contentJsonLd)}}
       />
 
       <div className="min-h-screen bg-gray-50 py-8">

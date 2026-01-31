@@ -42,7 +42,13 @@ async function getPerformers(performerIds: string[]) {
   }
 }
 
-async function getRelatedContents(category: string, genre: string, currentContentId: string, limit: number = 10) {
+// ✅ ランダム表示機能を追加した改善版
+async function getRelatedContents(
+  category: string,
+  genre: string,
+  currentContentId: string,
+  limit: number = 10
+) {
   try {
     const filters: any[] = [
       {
@@ -90,12 +96,23 @@ async function getRelatedContents(category: string, genre: string, currentConten
           direction: 'descending',
         },
       ],
-      page_size: limit + 1,
+      page_size: limit * 3, // ✅ 3倍の件数を取得してランダム選択
     });
 
-    const relatedContents = response.results.filter((content: any) => content.id !== currentContentId);
+    // ✅ 現在のコンテンツを除外
+    const filteredContents = response.results.filter(
+      (content: any) => content.id !== currentContentId
+    );
 
-    return relatedContents.slice(0, limit);
+    // ✅ Fisher-Yates シャッフルアルゴリズムでランダム化
+    const shuffled = [...filteredContents];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    // ✅ 指定件数だけ返す
+    return shuffled.slice(0, limit);
   } catch (error) {
     console.error('Error fetching related contents:', error);
     return [];
@@ -138,7 +155,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     openGraph: {
       title: `${title} - 放課後制服動画ナビ`,
       description: metaDescription.slice(0, 160),
-      url: `{{https://seifuku-jk.com/content/${resolvedParams.id}}}`,
+      url: `https://seifuku-jk.com/content/${resolvedParams.id}`,
       type: 'video.other',
       images: thumbnail ? [
         {
@@ -169,40 +186,20 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
   // @ts-ignore
   const properties = content.properties;
 
-  // ✅ デバッグ：プロパティ名を全て確認
-  console.log('=== 全プロパティ名 ===');
-  console.log(Object.keys(properties));
-
-  // ✅ サムネイルの詳細情報
-  console.log('\n=== サムネイル詳細 ===');
-  console.log(JSON.stringify(properties['サムネイル'], null, 2));
-
-  // ✅ サンプル画像の詳細情報
-  console.log('\n=== サンプル画像詳細 ===');
-  console.log(JSON.stringify(properties['サンプル画像'], null, 2));
-
   const title = properties['タイトル']?.title[0]?.plain_text || '無題';
 
-  // 複数のパターンで画像URLを取得してみる
   const thumbnail =
     properties['サムネイル']?.files?.[0]?.file?.url ||
     properties['サムネイル']?.files?.[0]?.external?.url ||
     properties['サムネイル']?.url ||
     '';
 
-  console.log('\n取得したサムネイルURL:', thumbnail);
-
   const sampleImages = properties['サンプル画像']?.files?.map(
     (file: any) => {
       const url = file.file?.url || file.external?.url || file.url;
-      console.log('サンプル画像URL:', url);
       return url;
     }
   ).filter(Boolean) || [];
-
-  console.log('\nサンプル画像配列:', sampleImages);
-  console.log('サンプル画像件数:', sampleImages.length);
-  console.log('================================\n');
 
   const description = properties['概要文']?.rich_text[0]?.plain_text || properties['説明文']?.rich_text[0]?.plain_text || '';
   const performerNamesText = properties['出演者名']?.rich_text[0]?.plain_text || '';
@@ -217,6 +214,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
   const performerIds = performerRelations.map((rel: any) => rel.id);
   const performers = await getPerformers(performerIds);
 
+  // ✅ ランダム表示機能を使用
   const relatedContents = await getRelatedContents(category, genre, resolvedParams.id, 8);
 
   const contentJsonLd = {
@@ -226,7 +224,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
     description: description,
     thumbnailUrl: thumbnail,
     uploadDate: releaseDate,
-    contentUrl: `{{https://seifuku-jk.com/content/${resolvedParams.id}}}`,
+    contentUrl: `https://seifuku-jk.com/content/${resolvedParams.id}`,
     interactionStatistic: {
       '@type': 'InteractionCounter',
       interactionType: { '@type': 'WatchAction' },
@@ -235,7 +233,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
     actor: performers.map(performer => ({
       '@type': 'Person',
       name: performer.name,
-      url: `{{https://seifuku-jk.com/person/${performer.id}}}`,
+      url: `https://seifuku-jk.com/person/${performer.id}`,
     })),
   };
 
@@ -253,7 +251,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
         '@type': 'ListItem',
         position: 2,
         name: title,
-        item: `{{https://seifuku-jk.com/content/${resolvedParams.id}}}`,
+        item: `https://seifuku-jk.com/content/${resolvedParams.id}`,
       },
     ],
   };
@@ -267,7 +265,7 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{__html: JSON.stringify(contentJsonLd)}}
+        dangerouslySetInnerHTML={{__html: JSON.stringify(breadcrumbJsonLd)}}
       />
 
       <div className="min-h-screen bg-gray-50 py-8">

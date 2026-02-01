@@ -652,63 +652,71 @@ export default function Home() {
               <>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {filteredPeople.slice(0, displayedPeopleCount).map((person: Person) => {
-                    const personId = person.id;
-                    const name = person.properties['人名']?.title[0]?.plain_text || '名前なし';
-                    const profileImageRaw = person.properties['プロフィール画像']?.files[0]?.file?.url || person.properties['プロフィール画像']?.files[0]?.external?.url || '';
-                    const profileImage = profileImageRaw ? profileImageRaw.replace('http://', 'https://') : '';
-                    const personCategories = person.properties['カテゴリ']?.multi_select || [];
-                    const fanzaLink = person.properties['FANZAリンク']?.url || '';
+  const personId = person.id;
+  const name = person.properties['人名']?.title[0]?.plain_text || '名前なし';
+  
+  // ✅ スラッグを取得
+  const slug = person.properties['スラッグ']?.rich_text?.[0]?.plain_text || '';
+  
+  // ✅ スラッグがあれば /api/person/[slug]、なければ /person/[id]
+  const personUrl = slug ? `/api/person/${slug}` : `/person/${personId}`;
+  
+  const profileImageRaw = person.properties['プロフィール画像']?.files[0]?.file?.url || 
+                          person.properties['プロフィール画像']?.files[0]?.external?.url || '';
+  const profileImage = profileImageRaw ? profileImageRaw.replace('http://', 'https://') : '';
+  const personCategories = person.properties['カテゴリ']?.multi_select || [];
+  const fanzaLink = person.properties['FANZAリンク']?.url || '';
 
-                    return (
-                      <div
-                        key={personId}
-                        className="bg-white rounded-lg shadow hover:shadow-xl transition-all overflow-hidden group"
-                      >
-                        <Link href={`/person/${personId}`}>
-                          <div className="relative aspect-[3/4] overflow-hidden bg-gray-200">
-                            {profileImage ? (
-                              <img
-                                src={profileImage}
-                                alt={name}
-                                loading="lazy"
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                              />
-                            ) : (
-                              <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                                <span className="text-4xl">👤</span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="p-4">
-                            <h3 className="font-bold text-lg mb-2 text-gray-900 line-clamp-2 min-h-[3.5rem]">{name}</h3>
-                            <div className="flex flex-wrap gap-1 mb-3">
-                              {personCategories.slice(0, 3).map((cat: any) => (
-                                <span
-                                  key={cat.name}
-                                  className="px-2 py-1 bg-pink-100 text-pink-600 rounded text-xs"
-                                >
-                                  {cat.name}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </Link>
-                        {fanzaLink && (
-                          <div className="px-4 pb-4">
-                            <a
-                              href={fanzaLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block w-full py-2 px-4 bg-gradient-to-r from-pink-500 to-red-500 text-white text-center font-bold rounded-lg hover:from-pink-600 hover:to-red-600 transition-all shadow-md hover:shadow-lg text-sm"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              🎬 動画をチェック
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+  return (
+    <div
+      key={personId}
+      className="bg-white rounded-lg shadow hover:shadow-xl transition-all overflow-hidden group"
+    >
+      <Link href={personUrl}> {/* ← ここを変更！ */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-gray-200">
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt={name}
+              loading="lazy"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+              <span className="text-4xl">👤</span>
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          <h3 className="font-bold text-lg mb-2 text-gray-900 line-clamp-2 min-h-[3.5rem]">{name}</h3>
+          <div className="flex flex-wrap gap-1 mb-3">
+            {personCategories.slice(0, 3).map((cat: any) => (
+              <span
+                key={cat.name}
+                className="px-2 py-1 bg-pink-100 text-pink-600 rounded text-xs"
+              >
+                {cat.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      </Link>
+      {fanzaLink && (
+        <div className="px-4 pb-4">
+          <a
+            href={fanzaLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full py-2 px-4 bg-gradient-to-r from-pink-500 to-red-500 text-white text-center font-bold rounded-lg hover:from-pink-600 hover:to-red-600 transition-all shadow-md hover:shadow-lg text-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            🎬 動画をチェック
+          </a>
+        </div>
+      )}
+    </div>
+  );
+})}
                 </div>
                 {/* ✅ もっと見るボタン（女優）- 動的取得 */}
                 {hasMorePeople && filteredPeople.length >= displayedPeopleCount && (

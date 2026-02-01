@@ -81,15 +81,19 @@ export async function getPeopleByGenre(genre: string): Promise<Person[]> {
 function mapPersonPage(page: any): Person {
   const name = page.properties['人名'].title[0]?.plain_text || '';
   
-  // ✅ 修正：relationは配列なので、そのまま length を取得
-  const contentRelation = page.properties['コンテンツ'].relation || [];
+  // ✅ Notionの「スラッグ」プロパティから取得（GASが自動生成したもの）
+  const notionSlug = page.properties['スラッグ']?.rich_text[0]?.plain_text || '';
   
+  // ✅ relationは配列なので、そのまま length を取得
+  const contentRelation = page.properties['コンテンツ'].relation || [];
+
   return {
     id: page.id,
     name,
-    slug: generateSlug(name, page.id),
-    image: page.properties['プロフィール画像'].files[0]?.file?.url || 
-           page.properties['プロフィール画像'].files[0]?.external?.url || 
+    // ✅ Notionのスラッグを優先、なければフォールバックでID使用
+    slug: notionSlug || generateSlug(name, page.id),
+    image: page.properties['プロフィール画像'].files[0]?.file?.url ||
+           page.properties['プロフィール画像'].files[0]?.external?.url ||
            null,
     description: page.properties['説明文'].rich_text[0]?.plain_text || '',
     birthDate: page.properties['生年月日'].date?.start || null,
@@ -110,6 +114,7 @@ function mapPersonPage(page: any): Person {
 
 /**
  * 名前からスラッグを生成（URLセーフな文字列）
+ * ※フォールバック用：Notionにスラッグがない場合のみ使用
  */
 function generateSlug(name: string, id: string): string {
   // IDの末尾8文字を使用してユニークなスラッグを生成

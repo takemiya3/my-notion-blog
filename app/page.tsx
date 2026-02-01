@@ -29,7 +29,10 @@ export default function Home() {
   const [contentSort, setContentSort] = useState<SortOption>('random');
   const [peopleSort, setPeopleSort] = useState<SortOption>('random');
   const [loading, setLoading] = useState(true);
-  
+
+  // ✅ ランダムソート用のシード（並び替え変更時のみ更新）
+  const [randomSeed, setRandomSeed] = useState<number>(Date.now());
+
   // ✅ もっと見る用のstate
   const [displayedPeopleCount, setDisplayedPeopleCount] = useState(20);
   const [displayedContentsCount, setDisplayedContentsCount] = useState(20);
@@ -37,7 +40,7 @@ export default function Home() {
   const [loadingMoreContents, setLoadingMoreContents] = useState(false);
   const [hasMorePeople, setHasMorePeople] = useState(true);
   const [hasMoreContents, setHasMoreContents] = useState(true);
-  
+
   const peopleListRef = useRef<HTMLElement>(null);
   const contentsListRef = useRef<HTMLElement>(null);
 
@@ -76,11 +79,10 @@ export default function Home() {
         setContents(contentsData);
         setGenres(genresData);
         setCategories(categoriesData);
-        
-        // 20件未満の場合は、もっと見るボタンを非表示
+
         setHasMorePeople(peopleData.length === 20);
         setHasMoreContents(contentsData.length === 20);
-        
+
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -92,72 +94,73 @@ export default function Home() {
 
   // ✅ 女優を追加で取得
   const loadMorePeople = async () => {
-  setLoadingMorePeople(true);
-  try {
-    const offset = people.length;
-    const res = await fetch(`/api/people?limit=20&offset=${offset}`);
-    const newPeople = await res.json();
+    setLoadingMorePeople(true);
+    try {
+      const offset = people.length;
+      const res = await fetch(`/api/people?limit=20&offset=${offset}`);
+      const newPeople = await res.json();
 
-    if (newPeople.length > 0) {
-      setPeople([...people, ...newPeople]);
-      setDisplayedPeopleCount(prev => prev + newPeople.length); // ✅ 修正：固定値20ではなく実際の件数
+      if (newPeople.length > 0) {
+        setPeople([...people, ...newPeople]);
+        setDisplayedPeopleCount(prev => prev + newPeople.length);
 
-      if (newPeople.length < 20) {
+        if (newPeople.length < 20) {
+          setHasMorePeople(false);
+        }
+      } else {
         setHasMorePeople(false);
       }
-    } else {
-      setHasMorePeople(false);
+    } catch (error) {
+      console.error('Error loading more people:', error);
+    } finally {
+      setLoadingMorePeople(false);
     }
-  } catch (error) {
-    console.error('Error loading more people:', error);
-  } finally {
-    setLoadingMorePeople(false);
-  }
-};
+  };
 
   // ✅ コンテンツを追加で取得
   const loadMoreContents = async () => {
-  setLoadingMoreContents(true);
-  try {
-    const offset = contents.length;
-    const res = await fetch(`/api/contents?limit=20&offset=${offset}`);
-    const newContents = await res.json();
+    setLoadingMoreContents(true);
+    try {
+      const offset = contents.length;
+      const res = await fetch(`/api/contents?limit=20&offset=${offset}`);
+      const newContents = await res.json();
 
-    if (newContents.length > 0) {
-      setContents([...contents, ...newContents]);
-      setDisplayedContentsCount(prev => prev + newContents.length); // ✅ 修正：固定値20ではなく実際の件数
+      if (newContents.length > 0) {
+        setContents([...contents, ...newContents]);
+        setDisplayedContentsCount(prev => prev + newContents.length);
 
-      if (newContents.length < 20) {
+        if (newContents.length < 20) {
+          setHasMoreContents(false);
+        }
+      } else {
         setHasMoreContents(false);
       }
-    } else {
-      setHasMoreContents(false);
+    } catch (error) {
+      console.error('Error loading more contents:', error);
+    } finally {
+      setLoadingMoreContents(false);
     }
-  } catch (error) {
-    console.error('Error loading more contents:', error);
-  } finally {
-    setLoadingMoreContents(false);
-  }
-};
+  };
 
   useEffect(() => {
     filterAndSortData(selectedCategories, selectedGenre, searchQuery, peopleSort, contentSort);
-  }, [selectedCategories, selectedGenre, searchQuery, peopleSort, contentSort, people, contents]);
+  }, [selectedCategories, selectedGenre, searchQuery, peopleSort, contentSort, people, contents, randomSeed]);
 
-  const shuffleArray = <T,>(array: T[]): T[] => {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
+  // ✅ シード値を使った安定したランダムソート
+  const seededShuffle = <T,>(array: T[], seed: number): T[] => {
+    const shuffled = array.map((item, index) => ({
+      item,
+      sort: Math.sin(seed + index) * 10000
+    }));
+    shuffled.sort((a, b) => a.sort - b.sort);
+    return shuffled.map(({ item }) => item);
   };
 
   const sortPeople = (peopleList: Person[], sortOption: SortOption): Person[] => {
     const sorted = [...peopleList];
     switch (sortOption) {
       case 'random':
-        return shuffleArray(sorted);
+        return seededShuffle(sorted, randomSeed + 1000); // +1000でコンテンツと異なるシード
       case 'name':
         return sorted.sort((a, b) => {
           const nameA = a.properties['人名']?.title[0]?.plain_text || '';
@@ -179,7 +182,7 @@ export default function Home() {
     const sorted = [...contentsList];
     switch (sortOption) {
       case 'random':
-        return shuffleArray(sorted);
+        return seededShuffle(sorted, randomSeed);
       case 'newest':
         return sorted.sort((a, b) => {
           const dateA = a.properties['公開日']?.date?.start || '0000-00-00';
@@ -386,68 +389,69 @@ export default function Home() {
           </div>
 
           {/* ジャンルボタン(画像付き) */}
-{genres.length > 0 && (
-  <div className="mb-8">
-    <h2 className="text-xl font-bold mb-4 text-black">ジャンルで探す</h2>
-    
-    {/* ✅ 横スクロール対応 */}
-    <div className="overflow-x-auto scrollbar-hide pb-4">
-      <div className="flex gap-4 min-w-max md:flex-wrap md:justify-center md:min-w-0">
-        {genres.map((genre: Genre) => {
-          const genreName =
-            genre.properties?.['ジャンル名']?.title?.[0]?.plain_text ||
-            genre.properties?.['Name']?.title?.[0]?.plain_text ||
-            genre.properties?.['名前']?.title?.[0]?.plain_text ||
-            '';
-          const imageProperty =
-            genre.properties?.['イメージ画像'] ||
-            genre.properties?.['Image'] ||
-            genre.properties?.['画像'] ||
-            genre.properties?.['サムネイル'];
-          const genreImage =
-            imageProperty?.files?.[0]?.file?.url ||
-            imageProperty?.files?.[0]?.external?.url ||
-            '';
+          {genres.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-bold mb-4 text-black">ジャンルで探す</h2>
 
-          const isSelected = selectedGenre === genreName;
+              {/* ✅ 横スクロール対応 */}
+              <div className="overflow-x-auto scrollbar-hide pb-4">
+                <div className="flex gap-4 min-w-max md:flex-wrap md:justify-center md:min-w-0">
+                  {genres.map((genre: Genre) => {
+                    const genreName =
+                      genre.properties?.['ジャンル名']?.title?.[0]?.plain_text ||
+                      genre.properties?.['Name']?.title?.[0]?.plain_text ||
+                      genre.properties?.['名前']?.title?.[0]?.plain_text ||
+                      '';
+                    const imageProperty =
+                      genre.properties?.['イメージ画像'] ||
+                      genre.properties?.['Image'] ||
+                      genre.properties?.['画像'] ||
+                      genre.properties?.['サムネイル'];
+                    const genreImage =
+                      imageProperty?.files?.[0]?.file?.url ||
+                      imageProperty?.files?.[0]?.external?.url ||
+                      '';
 
-          if (!genreName) return null;
+                    const isSelected = selectedGenre === genreName;
 
-          return (
-            <button
-              key={genre.id}
-              onClick={() => handleGenreClick(genreName)}
-              className={`flex-shrink-0 relative overflow-hidden rounded-lg shadow-md transition-all ${
-                isSelected ? 'ring-4 ring-pink-500 scale-105' : 'hover:scale-105 hover:shadow-lg'
-              }`}
-              style={{
-                width: '200px',
-                height: '150px',
-                backgroundImage: genreImage
-                  ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${genreImage})`
-                  : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundColor: genreImage ? 'transparent' : '#000',
-              }}
-            >
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-white font-bold text-lg drop-shadow-lg">
-                  {genreName}
-                </span>
+                    if (!genreName) return null;
+
+                    return (
+                      <button
+                        key={genre.id}
+                        onClick={() => handleGenreClick(genreName)}
+                        className={`flex-shrink-0 relative overflow-hidden rounded-lg shadow-md transition-all ${
+                          isSelected ? 'ring-4 ring-pink-500 scale-105' : 'hover:scale-105 hover:shadow-lg'
+                        }`}
+                        style={{
+                          width: '200px',
+                          height: '150px',
+                          backgroundImage: genreImage
+                            ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${genreImage})`
+                            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                          backgroundColor: genreImage ? 'transparent' : '#000',
+                        }}
+                      >
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-white font-bold text-lg drop-shadow-lg">
+                            {genreName}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-    
-    {/* ✅ スクロールヒント（スマホのみ表示） */}
-    <p className="text-sm text-gray-500 mt-2 md:hidden text-center">
-      ← 横にスワイプ →
-    </p>
-  </div>
-)}
+
+              {/* ✅ スクロールヒント（スマホのみ表示） */}
+              <p className="text-sm text-gray-500 mt-2 md:hidden text-center">
+                ← 横にスワイプ →
+              </p>
+            </div>
+          )}
+
           {/* 詳細検索ボタン */}
           <div className="mb-8 flex justify-center items-center gap-4">
             <button
@@ -564,7 +568,12 @@ export default function Home() {
                 <span className="text-sm text-black">並び替え:</span>
                 <select
                   value={contentSort}
-                  onChange={(e) => setContentSort(e.target.value as SortOption)}
+                  onChange={(e) => {
+                    setContentSort(e.target.value as SortOption);
+                    if (e.target.value === 'random') {
+                      setRandomSeed(Date.now()); // ✅ ランダム選択時に新しいシード
+                    }
+                  }}
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500 text-black"
                 >
                   <option value="random">ランダム</option>
@@ -643,7 +652,12 @@ export default function Home() {
                 <span className="text-sm text-black">並び替え:</span>
                 <select
                   value={peopleSort}
-                  onChange={(e) => setPeopleSort(e.target.value as SortOption)}
+                  onChange={(e) => {
+                    setPeopleSort(e.target.value as SortOption);
+                    if (e.target.value === 'random') {
+                      setRandomSeed(Date.now()); // ✅ ランダム選択時に新しいシード
+                    }
+                  }}
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500 text-black"
                 >
                   <option value="name">名前順</option>
@@ -658,68 +672,67 @@ export default function Home() {
               <>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {filteredPeople.slice(0, displayedPeopleCount).map((person: Person) => {
-  const personId = person.id;
-  const name = person.properties['人名']?.title[0]?.plain_text || '名前なし';
-  
-  // ✅ スラッグを取得
-  const slug = person.properties['スラッグ']?.rich_text?.[0]?.plain_text || '';
-  const personUrl = slug ? `/person/${slug}` : `/person/${personId}`;  
-  const profileImageRaw = person.properties['プロフィール画像']?.files[0]?.file?.url || 
-                          person.properties['プロフィール画像']?.files[0]?.external?.url || '';
-  const profileImage = profileImageRaw ? profileImageRaw.replace('http://', 'https://') : '';
-  const personCategories = person.properties['カテゴリ']?.multi_select || [];
-  const fanzaLink = person.properties['FANZAリンク']?.url || '';
+                    const personId = person.id;
+                    const name = person.properties['人名']?.title[0]?.plain_text || '名前なし';
 
-  return (
-    <div
-      key={personId}
-      className="bg-white rounded-lg shadow hover:shadow-xl transition-all overflow-hidden group"
-    >
-      <Link href={personUrl}> {/* ← ここを変更！ */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-gray-200">
-          {profileImage ? (
-            <img
-              src={profileImage}
-              alt={name}
-              loading="lazy"
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-              <span className="text-4xl">👤</span>
-            </div>
-          )}
-        </div>
-        <div className="p-4">
-          <h3 className="font-bold text-lg mb-2 text-gray-900 line-clamp-2 min-h-[3.5rem]">{name}</h3>
-          <div className="flex flex-wrap gap-1 mb-3">
-            {personCategories.slice(0, 3).map((cat: any) => (
-              <span
-                key={cat.name}
-                className="px-2 py-1 bg-pink-100 text-pink-600 rounded text-xs"
-              >
-                {cat.name}
-              </span>
-            ))}
-          </div>
-        </div>
-      </Link>
-      {fanzaLink && (
-        <div className="px-4 pb-4">
-          <a
-            href={fanzaLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full py-2 px-4 bg-gradient-to-r from-pink-500 to-red-500 text-white text-center font-bold rounded-lg hover:from-pink-600 hover:to-red-600 transition-all shadow-md hover:shadow-lg text-sm"
-            onClick={(e) => e.stopPropagation()}
-          >
-            🎬 動画をチェック
-          </a>
-        </div>
-      )}
-    </div>
-  );
-})}
+                    const slug = person.properties['スラッグ']?.rich_text?.[0]?.plain_text || '';
+                    const personUrl = slug ? `/person/${slug}` : `/person/${personId}`;
+                    const profileImageRaw = person.properties['プロフィール画像']?.files[0]?.file?.url ||
+                      person.properties['プロフィール画像']?.files[0]?.external?.url || '';
+                    const profileImage = profileImageRaw ? profileImageRaw.replace('http://', 'https://') : '';
+                    const personCategories = person.properties['カテゴリ']?.multi_select || [];
+                    const fanzaLink = person.properties['FANZAリンク']?.url || '';
+
+                    return (
+                      <div
+                        key={personId}
+                        className="bg-white rounded-lg shadow hover:shadow-xl transition-all overflow-hidden group"
+                      >
+                        <Link href={personUrl}>
+                          <div className="relative aspect-[3/4] overflow-hidden bg-gray-200">
+                            {profileImage ? (
+                              <img
+                                src={profileImage}
+                                alt={name}
+                                loading="lazy"
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                                <span className="text-4xl">👤</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-4">
+                            <h3 className="font-bold text-lg mb-2 text-gray-900 line-clamp-2 min-h-[3.5rem]">{name}</h3>
+                            <div className="flex flex-wrap gap-1 mb-3">
+                              {personCategories.slice(0, 3).map((cat: any) => (
+                                <span
+                                  key={cat.name}
+                                  className="px-2 py-1 bg-pink-100 text-pink-600 rounded text-xs"
+                                >
+                                  {cat.name}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </Link>
+                        {fanzaLink && (
+                          <div className="px-4 pb-4">
+                            <a
+                              href={fanzaLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block w-full py-2 px-4 bg-gradient-to-r from-pink-500 to-red-500 text-white text-center font-bold rounded-lg hover:from-pink-600 hover:to-red-600 transition-all shadow-md hover:shadow-lg text-sm"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              🎬 動画をチェック
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
                 {/* ✅ もっと見るボタン（女優）- 動的取得 */}
                 {hasMorePeople && filteredPeople.length >= displayedPeopleCount && (

@@ -2,9 +2,9 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { 
-  getPersonBySlug, 
-  getAllPersonSlugs 
+import {
+  getPersonBySlug,
+  getAllPersonSlugs
 } from '@/lib/notion/people';
 import { getContentsByPerson } from '@/lib/notion/contents';
 import ContentCard from '@/components/ContentCard';
@@ -13,14 +13,19 @@ interface PageProps {
   params: { slug: string };
 }
 
+// ✅ ISR設定
+export const revalidate = 3600;
+export const dynamicParams = true; // 追加
+
+// ✅ 空配列に変更（ビルド時は生成しない）
 export async function generateStaticParams() {
-  const slugs = await getAllPersonSlugs();
-  return slugs.map((slug) => ({ slug }));
+  return []; // これだけでOK！
 }
 
+// 以下は既存のコードをそのまま維持
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const person = await getPersonBySlug(params.slug);
-  
+
   if (!person) {
     return { title: 'ページが見つかりません' };
   }

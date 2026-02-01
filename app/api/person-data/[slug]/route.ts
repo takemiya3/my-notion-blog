@@ -7,10 +7,12 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 export async function GET(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> } // ✅ Promise型に変更
 ) {
+  const resolvedParams = await params; // ✅ awaitで解決
+  
   try {
-    const person = await getPersonBySlug(params.slug);
+    const person = await getPersonBySlug(resolvedParams.slug);
     
     if (!person) {
       return NextResponse.json({ error: 'Person not found' }, { status: 404 });
@@ -49,6 +51,7 @@ export async function GET(
       });
     }
 
+    // Fisher-Yatesシャッフル
     const shuffled = [...response.results];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));

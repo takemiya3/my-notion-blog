@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Loading from '@/components/Loading';
 import Script from 'next/script';
 
@@ -16,6 +17,7 @@ type Category = {
 type SortOption = 'newest' | 'popular' | 'sales' | 'name' | 'random';
 
 export default function Home() {
+  const router = useRouter();
   const [people, setPeople] = useState<Person[]>([]);
   const [contents, setContents] = useState<Content[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
@@ -298,16 +300,19 @@ export default function Home() {
   };
 
   const handleGenreClick = (genreName: string) => {
-    setSelectedGenre(selectedGenre === genreName ? null : genreName);
-    setTimeout(() => {
-      if (contentsListRef.current) {
-        contentsListRef.current.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        });
-      }
-    }, 100);
-  };
+  // ジャンルマスタから該当するジャンルを探す
+  const genre = genres.find((g: any) => {
+    const name = g.properties['ジャンル名']?.title?.[0]?.plain_text ||
+                 g.properties['Name']?.title?.[0]?.plain_text ||
+                 g.properties['名前']?.title?.[0]?.plain_text;
+    return name === genreName;
+  });
+  
+  if (genre) {
+    // ジャンルページに遷移
+    router.push(`/genre/${genre.id}`);
+  }
+};
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);

@@ -657,10 +657,7 @@ export default function Home() {
   
   // ✅ スラッグを取得
   const slug = person.properties['スラッグ']?.rich_text?.[0]?.plain_text || '';
-  
-  // ✅ スラッグがあれば /api/person/[slug]、なければ /person/[id]
-  const personUrl = slug ? `/api/person/${slug}` : `/person/${personId}`;
-  
+  const personUrl = slug ? `/person/${slug}` : `/person/${personId}`;  
   const profileImageRaw = person.properties['プロフィール画像']?.files[0]?.file?.url || 
                           person.properties['プロフィール画像']?.files[0]?.external?.url || '';
   const profileImage = profileImageRaw ? profileImageRaw.replace('http://', 'https://') : '';

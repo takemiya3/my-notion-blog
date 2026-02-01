@@ -13,16 +13,15 @@ interface PageProps {
   params: { slug: string };
 }
 
-// ✅ ISR設定
+// ✅ ISR設定（ここだけに配置）
 export const revalidate = 3600;
-export const dynamicParams = true; // 追加
+export const dynamicParams = true;
 
-// ✅ 空配列に変更（ビルド時は生成しない）
+// ✅ ビルド時は生成しない
 export async function generateStaticParams() {
-  return []; // これだけでOK！
+  return [];
 }
 
-// 以下は既存のコードをそのまま維持
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const person = await getPersonBySlug(params.slug);
 
@@ -39,18 +38,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export const revalidate = 3600;
-
 export default async function PersonPage({ params }: PageProps) {
   const person = await getPersonBySlug(params.slug);
-  
+
   if (!person) {
     notFound();
   }
 
   const contents = await getContentsByPerson(person.id);
 
-  const age = person.birthDate 
+  const age = person.birthDate
     ? Math.floor((Date.now() - new Date(person.birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
     : null;
 
@@ -90,7 +87,7 @@ export default async function PersonPage({ params }: PageProps) {
         {/* プロフィール情報 */}
         <div className="md:col-span-2">
           <h1 className="text-4xl font-bold mb-4">{person.name}</h1>
-          
+
           {person.description && (
             <p className="text-gray-700 mb-6 leading-relaxed">{person.description}</p>
           )}
@@ -145,7 +142,7 @@ export default async function PersonPage({ params }: PageProps) {
                     key={idx}
                     href={`/categories/${cat}`}
                     className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm
-                             hover:bg-blue-200 transition-colors"
+                      hover:bg-blue-200 transition-colors"
                   >
                     {cat}
                   </Link>
@@ -178,7 +175,7 @@ export default async function PersonPage({ params }: PageProps) {
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block bg-pink-600 text-white px-6 py-3 rounded-lg
-                       hover:bg-pink-700 transition-colors font-medium"
+                hover:bg-pink-700 transition-colors font-medium"
             >
               FANZAで作品を見る →
             </a>
@@ -191,7 +188,7 @@ export default async function PersonPage({ params }: PageProps) {
         <h2 className="text-2xl font-bold mb-6">
           出演作品 <span className="text-gray-500 text-lg">({contents.length}件)</span>
         </h2>
-        
+
         {contents.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {contents.map((content) => (

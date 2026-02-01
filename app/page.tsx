@@ -30,8 +30,9 @@ export default function Home() {
   const [peopleSort, setPeopleSort] = useState<SortOption>('random');
   const [loading, setLoading] = useState(true);
 
-  // ✅ ランダムソート用のシード（並び替え変更時のみ更新）
-  const [randomSeed, setRandomSeed] = useState<number>(Date.now());
+  // ✅ シャッフル済みデータのキャッシュ
+  const [shuffledContents, setShuffledContents] = useState<Content[]>([]);
+  const [shuffledPeople, setShuffledPeople] = useState<Person[]>([]);
 
   // ✅ もっと見る用のstate
   const [displayedPeopleCount, setDisplayedPeopleCount] = useState(20);
@@ -144,23 +145,29 @@ export default function Home() {
 
   useEffect(() => {
     filterAndSortData(selectedCategories, selectedGenre, searchQuery, peopleSort, contentSort);
-  }, [selectedCategories, selectedGenre, searchQuery, peopleSort, contentSort, people, contents, randomSeed]);
+  }, [selectedCategories, selectedGenre, searchQuery, peopleSort, contentSort, people, contents]);
 
-  // ✅ シード値を使った安定したランダムソート
-  const seededShuffle = <T,>(array: T[], seed: number): T[] => {
-    const shuffled = array.map((item, index) => ({
-      item,
-      sort: Math.sin(seed + index) * 10000
-    }));
-    shuffled.sort((a, b) => a.sort - b.sort);
-    return shuffled.map(({ item }) => item);
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
   };
 
   const sortPeople = (peopleList: Person[], sortOption: SortOption): Person[] => {
     const sorted = [...peopleList];
     switch (sortOption) {
       case 'random':
-        return seededShuffle(sorted, randomSeed + 1000); // +1000でコンテンツと異なるシード
+        // ✅ キャッシュされたシャッフル結果を使用
+        if (shuffledPeople.length === sorted.length && shuffledPeople.length > 0) {
+          return shuffledPeople;
+        }
+        // 初回またはデータ数が変わった場合のみシャッフル
+        const newShuffled = shuffleArray(sorted);
+        setShuffledPeople(newShuffled);
+        return newShuffled;
       case 'name':
         return sorted.sort((a, b) => {
           const nameA = a.properties['人名']?.title[0]?.plain_text || '';
@@ -182,7 +189,14 @@ export default function Home() {
     const sorted = [...contentsList];
     switch (sortOption) {
       case 'random':
-        return seededShuffle(sorted, randomSeed);
+        // ✅ キャッシュされたシャッフル結果を使用
+        if (shuffledContents.length === sorted.length && shuffledContents.length > 0) {
+          return shuffledContents;
+        }
+        // 初回またはデータ数が変わった場合のみシャッフル
+        const newShuffled = shuffleArray(sorted);
+        setShuffledContents(newShuffled);
+        return newShuffled;
       case 'newest':
         return sorted.sort((a, b) => {
           const dateA = a.properties['公開日']?.date?.start || '0000-00-00';
@@ -353,8 +367,7 @@ export default function Home() {
       <Script
         id="structured-data"
         type="application/ld+json"
-        dangerouslySetInnerHTML={{__html: JSON.stringify(structuredData)}}
-      />
+        dangerouslySetInnerHTML={{__html: JSON.stringify(structuredData)}}      />
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4">
           <h1 className="text-4xl font-bold text-center mb-8 text-black">放課後制服動画ナビ</h1>
@@ -569,9 +582,10 @@ export default function Home() {
                 <select
                   value={contentSort}
                   onChange={(e) => {
-                    setContentSort(e.target.value as SortOption);
-                    if (e.target.value === 'random') {
-                      setRandomSeed(Date.now()); // ✅ ランダム選択時に新しいシード
+                    const newSort = e.target.value as SortOption;
+                    setContentSort(newSort);
+                    if (newSort === 'random') {
+                      setShuffledContents([]); // ✅ キャッシュをクリアして再シャッフル
                     }
                   }}
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500 text-black"
@@ -653,9 +667,10 @@ export default function Home() {
                 <select
                   value={peopleSort}
                   onChange={(e) => {
-                    setPeopleSort(e.target.value as SortOption);
-                    if (e.target.value === 'random') {
-                      setRandomSeed(Date.now()); // ✅ ランダム選択時に新しいシード
+                    const newSort = e.target.value as SortOption;
+                    setPeopleSort(newSort);
+                    if (newSort === 'random') {
+                      setShuffledPeople([]); // ✅ キャッシュをクリアして再シャッフル
                     }
                   }}
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500 text-black"

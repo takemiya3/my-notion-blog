@@ -12,7 +12,6 @@ const CONTENT_DB_ID = process.env.NOTION_CONTENT_DB_ID!;
 
 export const revalidate = 60;
 
-// ✅ 静的パス生成
 export async function generateStaticParams() {
   try {
     const response = await notion.databases.query({
@@ -44,17 +43,19 @@ async function getGenreData(genreId: string) {
   }
 }
 
-// ✅ カテゴリで絞り込むように変更
+// ✅ カテゴリで絞り込む（デバッグ版）
 async function getGenreContents(genreName: string) {
   try {
+    console.log('🔍 検索するジャンル名:', genreName);
+    
     const response = await notion.databases.query({
       database_id: CONTENT_DB_ID,
       filter: {
         and: [
           {
-            property: 'カテゴリ', // ✅ 「ジャンル」→「カテゴリ」に変更
-            multi_select: { // ✅ select → multi_select に変更
-              contains: genreName, // ✅ equals → contains に変更
+            property: 'カテゴリ',
+            multi_select: {
+              contains: genreName,
             },
           },
           {
@@ -72,9 +73,19 @@ async function getGenreContents(genreName: string) {
       page_size: 100,
     });
 
+    console.log(`✅ 見つかったコンテンツ数: ${response.results.length}件`);
+    
+    // ✅ 最初の3件のカテゴリを確認
+    response.results.slice(0, 3).forEach((content: any, index) => {
+      const title = content.properties['タイトル']?.title[0]?.plain_text || '無題';
+      const categories = content.properties['カテゴリ']?.multi_select || [];
+      console.log(`${index + 1}. ${title}`);
+      console.log(`   カテゴリ: ${categories.map((c: any) => c.name).join(', ')}`);
+    });
+
     return response.results;
   } catch (error) {
-    console.error('Error fetching genre contents:', error);
+    console.error('❌ Error fetching genre contents:', error);
     return [];
   }
 }
@@ -170,6 +181,9 @@ export default async function GenrePage({ params }: { params: Promise<{ id: stri
             <div className="bg-white rounded-lg shadow p-12 text-center">
               <p className="text-gray-600">
                 このジャンルにはまだコンテンツがありません
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                ※ 「{name}」のカテゴリが設定されているコンテンツが表示されます
               </p>
             </div>
           ) : (

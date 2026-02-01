@@ -29,8 +29,13 @@ export default function Home() {
   const [contentSort, setContentSort] = useState<SortOption>('random');
   const [peopleSort, setPeopleSort] = useState<SortOption>('random');
   const [loading, setLoading] = useState(true);
-  const [displayedPeopleCount, setDisplayedPeopleCount] = useState(10);
+  
+  // ✅ もっと見る用のstate
+  const [displayedPeopleCount, setDisplayedPeopleCount] = useState(20);
+  const [displayedContentsCount, setDisplayedContentsCount] = useState(20); // 追加
+  
   const peopleListRef = useRef<HTMLElement>(null);
+  const contentsListRef = useRef<HTMLElement>(null); // 追加
 
   const structuredData = {
     '@context': 'https://schema.org',
@@ -51,7 +56,6 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // 最初は20件だけ取得してパフォーマンスを改善
         const [peopleRes, contentsRes, genresRes, categoriesRes] = await Promise.all([
           fetch('/api/people?limit=20'),
           fetch('/api/contents?limit=20'),
@@ -227,8 +231,8 @@ export default function Home() {
   const handleGenreClick = (genreName: string) => {
     setSelectedGenre(selectedGenre === genreName ? null : genreName);
     setTimeout(() => {
-      if (peopleListRef.current) {
-        peopleListRef.current.scrollIntoView({
+      if (contentsListRef.current) {
+        contentsListRef.current.scrollIntoView({
           behavior: 'smooth',
           block: 'start'
         });
@@ -483,7 +487,78 @@ export default function Home() {
             </div>
           )}
 
-          {/* 人物一覧 */}
+          {/* ✅ コンテンツ一覧（順序を上に移動） */}
+          <section ref={contentsListRef} className="mb-12">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-black">
+                最新コンテンツ ({filteredContents.length}件)
+              </h2>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-black">並び替え:</span>
+                <select
+                  value={contentSort}
+                  onChange={(e) => setContentSort(e.target.value as SortOption)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500 text-black"
+                >
+                  <option value="random">ランダム</option>
+                  <option value="newest">新着順</option>
+                  <option value="popular">人気順(閲覧数)</option>
+                  <option value="sales">売上順</option>
+                  <option value="name">タイトル順</option>
+                </select>
+              </div>
+            </div>
+            {filteredContents.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">該当するコンテンツが見つかりませんでした</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {filteredContents.slice(0, displayedContentsCount).map((content: Content) => {
+                    const contentId = content.id;
+                    const title = content.properties['タイトル']?.title[0]?.plain_text || '無題';
+                    const thumbnailRaw = content.properties['サムネイル']?.files[0]?.file?.url || content.properties['サムネイル']?.files[0]?.external?.url || '';
+                    const thumbnail = thumbnailRaw ? thumbnailRaw.replace('http://', 'https://') : '';
+                    const views = content.properties['閲覧数']?.number || 0;
+
+                    return (
+                      <Link
+                        key={contentId}
+                        href={`/content/${contentId}`}
+                        onClick={() => handleContentClick(contentId)}
+                        className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden"
+                      >
+                        {thumbnail && (
+                          <img
+                            src={thumbnail}
+                            alt={title}
+                            loading="lazy"
+                            className="w-full h-48 object-cover"
+                          />
+                        )}
+                        <div className="p-4">
+                          <h3 className="font-bold text-lg mb-2 line-clamp-2 text-black">{title}</h3>
+                          <p className="text-gray-600 text-sm">👁 {views.toLocaleString()} views</p>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+                {/* ✅ もっと見るボタン（コンテンツ） */}
+                {filteredContents.length > displayedContentsCount && (
+                  <div className="text-center mt-8">
+                    <button
+                      onClick={() => setDisplayedContentsCount(prev => prev + 20)}
+                      className="px-8 py-3 bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all"
+                    >
+                      もっと見る ({filteredContents.length - displayedContentsCount}件)
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+
+          {/* ✅ 人物一覧（順序を下に移動） */}
           <section ref={peopleListRef} className="mb-12">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-black">
@@ -566,75 +641,18 @@ export default function Home() {
                     );
                   })}
                 </div>
+                {/* ✅ もっと見るボタン（女優） */}
                 {filteredPeople.length > displayedPeopleCount && (
                   <div className="text-center mt-8">
                     <button
-                      onClick={() => setDisplayedPeopleCount(prev => prev + 10)}
+                      onClick={() => setDisplayedPeopleCount(prev => prev + 20)}
                       className="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-lg shadow transition-colors"
                     >
-                      続きを見る ({filteredPeople.length - displayedPeopleCount}件)
+                      もっと見る ({filteredPeople.length - displayedPeopleCount}件)
                     </button>
                   </div>
                 )}
               </>
-            )}
-          </section>
-
-          {/* コンテンツ一覧 */}
-          <section>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-black">
-                最新コンテンツ ({filteredContents.length}件)
-              </h2>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-black">並び替え:</span>
-                <select
-                  value={contentSort}
-                  onChange={(e) => setContentSort(e.target.value as SortOption)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-500 text-black"
-                >
-                  <option value="random">ランダム</option>
-                  <option value="newest">新着順</option>
-                  <option value="popular">人気順(閲覧数)</option>
-                  <option value="sales">売上順</option>
-                  <option value="name">タイトル順</option>
-                </select>
-              </div>
-            </div>
-            {filteredContents.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">該当するコンテンツが見つかりませんでした</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {filteredContents.map((content: Content) => {
-                  const contentId = content.id;
-                  const title = content.properties['タイトル']?.title[0]?.plain_text || '無題';
-                  const thumbnailRaw = content.properties['サムネイル']?.files[0]?.file?.url || content.properties['サムネイル']?.files[0]?.external?.url || '';
-                  const thumbnail = thumbnailRaw ? thumbnailRaw.replace('http://', 'https://') : '';
-                  const views = content.properties['閲覧数']?.number || 0;
-
-                  return (
-                    <Link
-                      key={contentId}
-                      href={`/content/${contentId}`}
-                      onClick={() => handleContentClick(contentId)}
-                      className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden"
-                    >
-                      {thumbnail && (
-                        <img
-                          src={thumbnail}
-                          alt={title}
-                          loading="lazy"
-                          className="w-full h-48 object-cover"
-                        />
-                      )}
-                      <div className="p-4">
-                        <h3 className="font-bold text-lg mb-2 line-clamp-2 text-black">{title}</h3>
-                        <p className="text-gray-600 text-sm">👁 {views.toLocaleString()} views</p>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
             )}
           </section>
         </div>

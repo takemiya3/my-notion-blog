@@ -44,6 +44,7 @@ async function getGenreData(genreId: string) {
   }
 }
 
+// ✅ カテゴリで絞り込むように変更
 async function getGenreContents(genreName: string) {
   try {
     const response = await notion.databases.query({
@@ -51,8 +52,10 @@ async function getGenreContents(genreName: string) {
       filter: {
         and: [
           {
-            property: 'ジャンル',
-            select: { equals: genreName },
+            property: 'カテゴリ', // ✅ 「ジャンル」→「カテゴリ」に変更
+            multi_select: { // ✅ select → multi_select に変更
+              contains: genreName, // ✅ equals → contains に変更
+            },
           },
           {
             property: '公開ステータス',

@@ -252,8 +252,8 @@ export default function Home() {
       });
     }
 
-    if (genre) {
-  // ✅ 「カテゴリ」プロパティ（multi_select）でフィルタ
+  if (genre) {
+  // ✅ カテゴリプロパティでフィルタ
   filteredP = filteredP.filter((person: Person) => {
     const personCategories = person.properties['カテゴリ']?.multi_select || [];
     return personCategories.some((cat: any) => cat.name === genre);

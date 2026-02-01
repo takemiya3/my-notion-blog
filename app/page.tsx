@@ -50,7 +50,7 @@ export default function Home() {
     '@type': 'WebSite',
     name: '放課後制服動画ナビ',
     url: 'https://www.seifuku-jk.com',
-    description: '制服・セーラー服・ブレザー・体操服・スクール水着などの動画作品と出演者の詳細情報を検索できる専門サイトです。',
+    description: '制服AV・エロ動画を完全網羅！セーラー服・ブレザー・JK・スクール水着・体操服など、制服系アダルト動画と女優情報を検索できる専門サイト。FANZA対応の最新作品を毎日更新中。',
     potentialAction: {
       '@type': 'SearchAction',
       target: {
@@ -253,24 +253,17 @@ export default function Home() {
     }
 
     if (genre) {
-      filteredP = filteredP.filter((person: Person) => {
-        const personGenreSelect = person.properties['ジャンル']?.select?.name || '';
-        const personGenreMulti = person.properties['ジャンル']?.multi_select || [];
-        if (personGenreSelect) {
-          return personGenreSelect === genre;
-        }
-        return personGenreMulti.some((g: any) => g.name === genre);
-      });
+  // ✅ 「カテゴリ」プロパティ（multi_select）でフィルタ
+  filteredP = filteredP.filter((person: Person) => {
+    const personCategories = person.properties['カテゴリ']?.multi_select || [];
+    return personCategories.some((cat: any) => cat.name === genre);
+  });
 
-      filteredC = filteredC.filter((content: Content) => {
-        const contentGenreSelect = content.properties['ジャンル']?.select?.name || '';
-        const contentGenreMulti = content.properties['ジャンル']?.multi_select || [];
-        if (contentGenreSelect) {
-          return contentGenreSelect === genre;
-        }
-        return contentGenreMulti.some((g: any) => g.name === genre);
-      });
-    }
+  filteredC = filteredC.filter((content: Content) => {
+    const contentCategories = content.properties['カテゴリ']?.multi_select || [];
+    return contentCategories.some((cat: any) => cat.name === genre);
+  });
+}
 
     if (query.trim() !== '') {
       const lowerQuery = query.toLowerCase();
@@ -370,7 +363,12 @@ export default function Home() {
         dangerouslySetInnerHTML={{__html: JSON.stringify(structuredData)}}      />
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4">
-          <h1 className="text-4xl font-bold text-center mb-8 text-black">放課後制服動画ナビ</h1>
+          <h1 className="text-4xl font-bold text-center mb-8 text-black">
+  制服AV・エロ動画専門サイト｜放課後制服動画ナビ
+</h1>
+<p className="text-center text-gray-600 mb-8 max-w-3xl mx-auto">
+  セーラー服・ブレザー・JK制服・スクール水着・体操服などの制服系AV・エロ動画を完全網羅。人気女優の作品情報やジャンル別検索で、お気に入りの制服動画が見つかります。
+</p>
 
           {/* 検索バー */}
           <div className="max-w-2xl mx-auto mb-8">

@@ -10,11 +10,16 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   metadataBase: new URL('https://seifuku-jk.com'),
   title: {
-    default: '放課後制服動画ナビ - 人物・コンテンツ検索サイト',
+    default: '制服AV・エロ動画専門サイト｜放課後制服動画ナビ',
     template: '%s | 放課後制服動画ナビ'
   },
-  description: '放課後制服動画ナビは、制服・セーラー服・ブレザー・体操服・スクール水着などの動画作品と出演者の詳細情報を検索できる専門サイトです。',
-  keywords: ['放課後制服', '制服動画', 'セーラー服', 'ブレザー', '体操服', 'スクール水着', 'ブルマ', '美少女', 'JK', '女子高生', '高校生', '高校1年生', '高校2年生', '高校3年生'],
+  description: '制服AV・エロ動画を完全網羅！セーラー服・ブレザー・JK制服・スクール水着・体操服など、制服系アダルト動画と女優情報を検索できる専門サイト。FANZA対応の最新作品を毎日更新中。',
+  keywords: [
+    '制服AV', '制服エロ動画', 'セーラー服AV', 'JK制服動画', 'ブレザーAV', 
+    'スクール水着エロ動画', '体操服AV', '制服女優', '制服アダルト', 
+    '女子高生制服', 'JKコスプレ', '制服フェチ', 'ブルマAV', 
+    '放課後制服', 'FANZA制服', '制服系AV女優', '制服動画サイト'
+  ],
   authors: [{ name: '放課後制服動画ナビ' }],
   creator: '放課後制服動画ナビ',
   publisher: '放課後制服動画ナビ',
@@ -33,22 +38,22 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ja_JP',
     url: 'https://seifuku-jk.com',
-    siteName: '放課後制服動画ナビ',
-    title: '放課後制服動画ナビ - 人物・コンテンツ検索サイト',
-    description: '制服・セーラー服・ブレザー・体操服・スクール水着などの動画作品と出演者の詳細情報を検索できる専門サイトです。',
+    siteName: '制服AV・エロ動画専門サイト｜放課後制服動画ナビ',
+    title: '制服AV・エロ動画専門サイト｜放課後制服動画ナビ',
+    description: 'セーラー服・ブレザー・JK制服・スクール水着・体操服など、制服系AV・エロ動画を完全網羅。FANZA対応の最新作品と人気女優情報を毎日更新。',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: '放課後制服動画ナビ',
+        alt: '制服AV・エロ動画専門サイト｜放課後制服動画ナビ',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: '放課後制服動画ナビ - 人物・コンテンツ検索サイト',
-    description: '制服・セーラー服・ブレザー・体操服・スクール水着などの動画作品と出演者情報を検索',
+    title: '制服AV・エロ動画専門サイト｜放課後制服動画ナビ',
+    description: 'セーラー服・ブレザー・JK制服・スクール水着など制服系AV・エロ動画を網羅。FANZA対応の最新作品と女優情報を検索',
     images: ['/og-image.png'],
   },
   verification: {

@@ -167,15 +167,24 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   const categoryNames = categories.map((cat: any) => cat.name).join('、');
 
+  // ✅ SEO強化版のメタディスクリプション
   const metaDescription = description ||
-    `${title}${performerNames ? ` - ${performerNames}が出演。` : '。'}${categoryNames ? `カテゴリ：${categoryNames}。` : ''}${releaseDate ? `公開日：${releaseDate}。` : ''}口コミ、評価などの詳細情報をご覧いただけます。`;
+    `${title}${performerNames ? ` - ${performerNames}が出演する制服AV動画。` : '。'}${categoryNames ? `${categoryNames}の` : ''}制服エロ動画の詳細情報、口コミ、評価をご覧いただけます。${releaseDate ? `公開日：${releaseDate}` : ''}`;
+
+  // ✅ SEO強化版のタイトル
+  const seoTitle = `${title}${performerNames ? ` - ${performerNames}` : ''} | 制服AV動画`;
 
   return {
-    title: title,
+    title: seoTitle,
     description: metaDescription.slice(0, 160),
-    keywords: [title, ...performerNames.split('、').filter(Boolean), ...categoryNames.split('、').filter(Boolean), 'コンテンツ', '動画'],
+    keywords: [
+      title, 
+      ...performerNames.split('、').filter(Boolean), 
+      ...categoryNames.split('、').filter(Boolean), 
+      '制服AV', '制服エロ動画', '制服動画', 'アダルト動画', 'FANZA'
+    ],
     openGraph: {
-      title: `${title} - 放課後制服動画ナビ`,
+      title: seoTitle,
       description: metaDescription.slice(0, 160),
       url: `https://seifuku-jk.com/content/${resolvedParams.id}`,
       type: 'video.other',
@@ -184,13 +193,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
           url: thumbnail,
           width: 1200,
           height: 630,
-          alt: title,
+          alt: `${title} - 制服AV動画のサムネイル`,
         },
       ] : [],
     },
     twitter: {
       card: 'summary_large_image',
-      title: title,
+      title: seoTitle,
       description: metaDescription.slice(0, 160),
       images: thumbnail ? [thumbnail] : [],
     },

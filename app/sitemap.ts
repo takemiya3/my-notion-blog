@@ -37,7 +37,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const dynamicPages: MetadataRoute.Sitemap = [];
 
   try {
-    // 人物ページを取得
+    // 人物ページを取得（✅ スラッグ対応）
     if (process.env.NOTION_PEOPLE_DB_ID) {
       const peopleResponse = await notion.databases.query({
         database_id: process.env.NOTION_PEOPLE_DB_ID,
@@ -50,14 +50,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       });
 
       peopleResponse.results.forEach((person: any) => {
+        // ✅ スラッグがあればスラッグを使用、なければIDを使用
+        const slug = person.properties['スラッグ']?.rich_text?.[0]?.plain_text || person.id;
+        
         dynamicPages.push({
-          url: `${baseUrl}/person/${person.id}`,
+          url: `${baseUrl}/person/${slug}`,
           lastModified: new Date(person.last_edited_time),
           changeFrequency: 'weekly',
-          priority: 0.7,
+          priority: 0.8, // ✅ 0.7 → 0.8 に変更（女優ページは重要）
         });
       });
-      
+
       console.log(`✅ 人物ページ: ${peopleResponse.results.length}件`);
     }
   } catch (error) {
@@ -65,7 +68,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   try {
-    // コンテンツページを取得
+    // コンテンツページを取得（✅ 優先度アップ）
     if (process.env.NOTION_CONTENT_DB_ID) {
       const contentsResponse = await notion.databases.query({
         database_id: process.env.NOTION_CONTENT_DB_ID,
@@ -81,11 +84,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         dynamicPages.push({
           url: `${baseUrl}/content/${content.id}`,
           lastModified: new Date(content.last_edited_time),
-          changeFrequency: 'weekly',
-          priority: 0.6,
+          changeFrequency: 'daily', // ✅ weekly → daily（コンテンツは頻繁に更新）
+          priority: 0.9, // ✅ 0.6 → 0.9（動画コンテンツは最重要）
         });
       });
-      
+
       console.log(`✅ コンテンツページ: ${contentsResponse.results.length}件`);
     }
   } catch (error) {
@@ -110,10 +113,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           url: `${baseUrl}/genre/${genre.id}`,
           lastModified: new Date(genre.last_edited_time),
           changeFrequency: 'weekly',
-          priority: 0.6,
+          priority: 0.7, // ✅ 0.6 → 0.7（ジャンルページも重要）
         });
       });
-      
+
       console.log(`✅ ジャンルページ: ${genresResponse.results.length}件`);
     }
   } catch (error) {
@@ -138,10 +141,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           url: `${baseUrl}/ranking/${ranking.id}`,
           lastModified: new Date(ranking.last_edited_time),
           changeFrequency: 'weekly',
-          priority: 0.7,
+          priority: 0.8, // ✅ 0.7 → 0.8（ランキングも重要）
         });
       });
-      
+
       console.log(`✅ ランキングページ: ${rankingsResponse.results.length}件`);
     }
   } catch (error) {
@@ -149,6 +152,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   console.log(`📊 合計: ${staticPages.length + dynamicPages.length}ページ`);
-  
+
   return [...staticPages, ...dynamicPages];
 }

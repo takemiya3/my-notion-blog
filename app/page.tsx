@@ -92,55 +92,53 @@ export default function Home() {
 
   // ✅ 女優を追加で取得
   const loadMorePeople = async () => {
-    setLoadingMorePeople(true);
-    try {
-      const offset = people.length;
-      const res = await fetch(`/api/people?limit=20&offset=${offset}`);
-      const newPeople = await res.json();
-      
-      if (newPeople.length > 0) {
-        setPeople([...people, ...newPeople]);
-        setDisplayedPeopleCount(displayedPeopleCount + 20);
-        
-        // 20件未満が返ってきた場合は、これ以上データがない
-        if (newPeople.length < 20) {
-          setHasMorePeople(false);
-        }
-      } else {
+  setLoadingMorePeople(true);
+  try {
+    const offset = people.length;
+    const res = await fetch(`/api/people?limit=20&offset=${offset}`);
+    const newPeople = await res.json();
+
+    if (newPeople.length > 0) {
+      setPeople([...people, ...newPeople]);
+      setDisplayedPeopleCount(prev => prev + newPeople.length); // ✅ 修正：固定値20ではなく実際の件数
+
+      if (newPeople.length < 20) {
         setHasMorePeople(false);
       }
-    } catch (error) {
-      console.error('Error loading more people:', error);
-    } finally {
-      setLoadingMorePeople(false);
+    } else {
+      setHasMorePeople(false);
     }
-  };
+  } catch (error) {
+    console.error('Error loading more people:', error);
+  } finally {
+    setLoadingMorePeople(false);
+  }
+};
 
   // ✅ コンテンツを追加で取得
   const loadMoreContents = async () => {
-    setLoadingMoreContents(true);
-    try {
-      const offset = contents.length;
-      const res = await fetch(`/api/contents?limit=20&offset=${offset}`);
-      const newContents = await res.json();
-      
-      if (newContents.length > 0) {
-        setContents([...contents, ...newContents]);
-        setDisplayedContentsCount(displayedContentsCount + 20);
-        
-        // 20件未満が返ってきた場合は、これ以上データがない
-        if (newContents.length < 20) {
-          setHasMoreContents(false);
-        }
-      } else {
+  setLoadingMoreContents(true);
+  try {
+    const offset = contents.length;
+    const res = await fetch(`/api/contents?limit=20&offset=${offset}`);
+    const newContents = await res.json();
+
+    if (newContents.length > 0) {
+      setContents([...contents, ...newContents]);
+      setDisplayedContentsCount(prev => prev + newContents.length); // ✅ 修正：固定値20ではなく実際の件数
+
+      if (newContents.length < 20) {
         setHasMoreContents(false);
       }
-    } catch (error) {
-      console.error('Error loading more contents:', error);
-    } finally {
-      setLoadingMoreContents(false);
+    } else {
+      setHasMoreContents(false);
     }
-  };
+  } catch (error) {
+    console.error('Error loading more contents:', error);
+  } finally {
+    setLoadingMoreContents(false);
+  }
+};
 
   useEffect(() => {
     filterAndSortData(selectedCategories, selectedGenre, searchQuery, peopleSort, contentSort);

@@ -32,10 +32,14 @@ export default function Home() {
   
   // ✅ もっと見る用のstate
   const [displayedPeopleCount, setDisplayedPeopleCount] = useState(20);
-  const [displayedContentsCount, setDisplayedContentsCount] = useState(20); // 追加
+  const [displayedContentsCount, setDisplayedContentsCount] = useState(20);
+  const [loadingMorePeople, setLoadingMorePeople] = useState(false);
+  const [loadingMoreContents, setLoadingMoreContents] = useState(false);
+  const [hasMorePeople, setHasMorePeople] = useState(true);
+  const [hasMoreContents, setHasMoreContents] = useState(true);
   
   const peopleListRef = useRef<HTMLElement>(null);
-  const contentsListRef = useRef<HTMLElement>(null); // 追加
+  const contentsListRef = useRef<HTMLElement>(null);
 
   const structuredData = {
     '@context': 'https://schema.org',
@@ -72,6 +76,11 @@ export default function Home() {
         setContents(contentsData);
         setGenres(genresData);
         setCategories(categoriesData);
+        
+        // 20件未満の場合は、もっと見るボタンを非表示
+        setHasMorePeople(peopleData.length === 20);
+        setHasMoreContents(contentsData.length === 20);
+        
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -80,6 +89,58 @@ export default function Home() {
     }
     fetchData();
   }, []);
+
+  // ✅ 女優を追加で取得
+  const loadMorePeople = async () => {
+    setLoadingMorePeople(true);
+    try {
+      const offset = people.length;
+      const res = await fetch(`/api/people?limit=20&offset=${offset}`);
+      const newPeople = await res.json();
+      
+      if (newPeople.length > 0) {
+        setPeople([...people, ...newPeople]);
+        setDisplayedPeopleCount(displayedPeopleCount + 20);
+        
+        // 20件未満が返ってきた場合は、これ以上データがない
+        if (newPeople.length < 20) {
+          setHasMorePeople(false);
+        }
+      } else {
+        setHasMorePeople(false);
+      }
+    } catch (error) {
+      console.error('Error loading more people:', error);
+    } finally {
+      setLoadingMorePeople(false);
+    }
+  };
+
+  // ✅ コンテンツを追加で取得
+  const loadMoreContents = async () => {
+    setLoadingMoreContents(true);
+    try {
+      const offset = contents.length;
+      const res = await fetch(`/api/contents?limit=20&offset=${offset}`);
+      const newContents = await res.json();
+      
+      if (newContents.length > 0) {
+        setContents([...contents, ...newContents]);
+        setDisplayedContentsCount(displayedContentsCount + 20);
+        
+        // 20件未満が返ってきた場合は、これ以上データがない
+        if (newContents.length < 20) {
+          setHasMoreContents(false);
+        }
+      } else {
+        setHasMoreContents(false);
+      }
+    } catch (error) {
+      console.error('Error loading more contents:', error);
+    } finally {
+      setLoadingMoreContents(false);
+    }
+  };
 
   useEffect(() => {
     filterAndSortData(selectedCategories, selectedGenre, searchQuery, peopleSort, contentSort);
@@ -543,14 +604,22 @@ export default function Home() {
                     );
                   })}
                 </div>
-                {/* ✅ もっと見るボタン（コンテンツ） */}
-                {filteredContents.length > displayedContentsCount && (
+                {/* ✅ もっと見るボタン（コンテンツ）- 動的取得 */}
+                {hasMoreContents && filteredContents.length >= displayedContentsCount && (
                   <div className="text-center mt-8">
                     <button
-                      onClick={() => setDisplayedContentsCount(prev => prev + 20)}
-                      className="px-8 py-3 bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all"
+                      onClick={loadMoreContents}
+                      disabled={loadingMoreContents}
+                      className="px-8 py-3 bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
                     >
-                      もっと見る ({filteredContents.length - displayedContentsCount}件)
+                      {loadingMoreContents ? (
+                        <>
+                          <span className="animate-spin">⏳</span>
+                          <span>読み込み中...</span>
+                        </>
+                      ) : (
+                        <span>もっと見る</span>
+                      )}
                     </button>
                   </div>
                 )}
@@ -641,14 +710,22 @@ export default function Home() {
                     );
                   })}
                 </div>
-                {/* ✅ もっと見るボタン（女優） */}
-                {filteredPeople.length > displayedPeopleCount && (
+                {/* ✅ もっと見るボタン（女優）- 動的取得 */}
+                {hasMorePeople && filteredPeople.length >= displayedPeopleCount && (
                   <div className="text-center mt-8">
                     <button
-                      onClick={() => setDisplayedPeopleCount(prev => prev + 20)}
-                      className="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-lg shadow transition-colors"
+                      onClick={loadMorePeople}
+                      disabled={loadingMorePeople}
+                      className="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-lg shadow transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
                     >
-                      もっと見る ({filteredPeople.length - displayedPeopleCount}件)
+                      {loadingMorePeople ? (
+                        <>
+                          <span className="animate-spin">⏳</span>
+                          <span>読み込み中...</span>
+                        </>
+                      ) : (
+                        <span>もっと見る</span>
+                      )}
                     </button>
                   </div>
                 )}

@@ -10,28 +10,13 @@ import AffiliateWidget from '@/components/AffiliateWidget';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
-export const revalidate = 60;
+// ✅ ISR設定
+export const revalidate = 3600; // 60 → 3600 に変更
+export const dynamicParams = true; // 追加
 
-// ✅ 静的パス生成（必須！）
+// ✅ 空配列に変更（ビルド時は生成しない）
 export async function generateStaticParams() {
-  try {
-    const response = await notion.databases.query({
-      database_id: process.env.NOTION_PEOPLE_DB_ID!,
-      filter: {
-        property: '公開ステータス',
-        checkbox: {
-          equals: true,
-        },
-      },
-    });
-
-    return response.results.map((person) => ({
-      id: person.id,
-    }));
-  } catch (error) {
-    console.error('Error generating static params:', error);
-    return [];
-  }
+  return []; // これだけでOK！
 }
 
 // 年齢を計算する関数

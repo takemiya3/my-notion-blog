@@ -9,8 +9,11 @@ import SampleImageGallery from './SampleImageGallery';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
-export const revalidate = 60;
+// ✅ ISR設定
+export const revalidate = 3600; // 60 → 3600 に変更
+export const dynamicParams = true; // 追加
 
+// 以下は既存のコードをそのまま維持
 async function getContentData(contentId: string) {
   try {
     const content = await notion.pages.retrieve({ page_id: contentId });

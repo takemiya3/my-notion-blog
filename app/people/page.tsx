@@ -55,12 +55,16 @@ export default async function PeoplePage() {
             const name = person.properties['人名']?.title[0]?.plain_text || '名前未設定';
             const image = person.properties['プロフィール画像']?.files[0]?.file?.url ||
               person.properties['プロフィール画像']?.files[0]?.external?.url || '';
-            const category = person.properties['カテゴリ']?.select?.name || '';
+            const categories = person.properties['カテゴリ']?.multi_select || [];
+            const slug = person.properties['スラッグ']?.rich_text?.[0]?.plain_text || '';
+            
+            // ✅ スラッグ優先、なければIDを使用
+            const personUrl = slug ? `/person/${slug}` : `/person/${personId}`;
 
             return (
               <Link
                 key={personId}
-                href={`/person/${personId}`}
+                href={personUrl}
                 className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden"
               >
                 <div className="relative aspect-[3/4] bg-gray-100">
@@ -82,8 +86,10 @@ export default async function PeoplePage() {
                   <h3 className="font-bold text-base line-clamp-1 text-black mb-1">
                     {name}
                   </h3>
-                  {category && (
-                    <p className="text-xs text-gray-600">{category}</p>
+                  {categories.length > 0 && (
+                    <p className="text-xs text-gray-600">
+                      {categories.map((cat: any) => cat.name).join(', ')}
+                    </p>
                   )}
                 </div>
               </Link>

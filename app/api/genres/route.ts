@@ -1,3 +1,10 @@
+export const revalidate = 3600;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  return []; // ビルド時は生成しない
+}
+
 import { NextRequest, NextResponse } from 'next/server';
 import { Client } from '@notionhq/client';
 

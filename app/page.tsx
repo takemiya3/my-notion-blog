@@ -12,6 +12,7 @@ type Category = {
   name: string;
   color: string;
 };
+
 type SortOption = 'newest' | 'popular' | 'sales' | 'name' | 'random';
 
 export default function Home() {
@@ -26,10 +27,9 @@ export default function Home() {
   const [showDetailSearchModal, setShowDetailSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [contentSort, setContentSort] = useState<SortOption>('random');
-  const [peopleSort, setPeopleSort] = useState<SortOption>('name');
+  const [peopleSort, setPeopleSort] = useState<SortOption>('random');
   const [loading, setLoading] = useState(true);
   const [displayedPeopleCount, setDisplayedPeopleCount] = useState(10);
-
   const peopleListRef = useRef<HTMLElement>(null);
 
   const structuredData = {
@@ -51,9 +51,10 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       try {
+        // 最初は20件だけ取得してパフォーマンスを改善
         const [peopleRes, contentsRes, genresRes, categoriesRes] = await Promise.all([
-          fetch('/api/people'),
-          fetch('/api/contents'),
+          fetch('/api/people?limit=20'),
+          fetch('/api/contents?limit=20'),
           fetch('/api/genres'),
           fetch('/api/categories'),
         ]);
@@ -73,7 +74,6 @@ export default function Home() {
         setLoading(false);
       }
     }
-
     fetchData();
   }, []);
 
@@ -92,7 +92,6 @@ export default function Home() {
 
   const sortPeople = (peopleList: Person[], sortOption: SortOption): Person[] => {
     const sorted = [...peopleList];
-
     switch (sortOption) {
       case 'random':
         return shuffleArray(sorted);
@@ -115,7 +114,6 @@ export default function Home() {
 
   const sortContents = (contentsList: Content[], sortOption: SortOption): Content[] => {
     const sorted = [...contentsList];
-
     switch (sortOption) {
       case 'random':
         return shuffleArray(sorted);
@@ -178,29 +176,24 @@ export default function Home() {
       filteredP = filteredP.filter((person: Person) => {
         const personGenreSelect = person.properties['ジャンル']?.select?.name || '';
         const personGenreMulti = person.properties['ジャンル']?.multi_select || [];
-
         if (personGenreSelect) {
           return personGenreSelect === genre;
         }
-
         return personGenreMulti.some((g: any) => g.name === genre);
       });
 
       filteredC = filteredC.filter((content: Content) => {
         const contentGenreSelect = content.properties['ジャンル']?.select?.name || '';
         const contentGenreMulti = content.properties['ジャンル']?.multi_select || [];
-
         if (contentGenreSelect) {
           return contentGenreSelect === genre;
         }
-
         return contentGenreMulti.some((g: any) => g.name === genre);
       });
     }
 
     if (query.trim() !== '') {
       const lowerQuery = query.toLowerCase();
-
       filteredP = filteredP.filter((person: Person) => {
         const name = person.properties['人名']?.title[0]?.plain_text || '';
         const description = person.properties['説明文']?.rich_text[0]?.plain_text || '';
@@ -233,7 +226,6 @@ export default function Home() {
 
   const handleGenreClick = (genreName: string) => {
     setSelectedGenre(selectedGenre === genreName ? null : genreName);
-
     setTimeout(() => {
       if (peopleListRef.current) {
         peopleListRef.current.scrollIntoView({
@@ -297,7 +289,6 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{__html: JSON.stringify(structuredData)}}
       />
-
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4">
           <h1 className="text-4xl font-bold text-center mb-8 text-black">放課後制服動画ナビ</h1>
@@ -342,13 +333,11 @@ export default function Home() {
                     genre.properties?.['Name']?.title?.[0]?.plain_text ||
                     genre.properties?.['名前']?.title?.[0]?.plain_text ||
                     '';
-
                   const imageProperty =
                     genre.properties?.['イメージ画像'] ||
                     genre.properties?.['Image'] ||
                     genre.properties?.['画像'] ||
                     genre.properties?.['サムネイル'];
-
                   const genreImage =
                     imageProperty?.files?.[0]?.file?.url ||
                     imageProperty?.files?.[0]?.external?.url ||
@@ -537,6 +526,7 @@ export default function Home() {
                               <img
                                 src={profileImage}
                                 alt={name}
+                                loading="lazy"
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                               />
                             ) : (
@@ -545,7 +535,6 @@ export default function Home() {
                               </div>
                             )}
                           </div>
-
                           <div className="p-4">
                             <h3 className="font-bold text-lg mb-2 text-gray-900 line-clamp-2 min-h-[3.5rem]">{name}</h3>
                             <div className="flex flex-wrap gap-1 mb-3">
@@ -560,7 +549,6 @@ export default function Home() {
                             </div>
                           </div>
                         </Link>
-
                         {fanzaLink && (
                           <div className="px-4 pb-4">
                             <a
@@ -578,7 +566,6 @@ export default function Home() {
                     );
                   })}
                 </div>
-
                 {filteredPeople.length > displayedPeopleCount && (
                   <div className="text-center mt-8">
                     <button
@@ -636,6 +623,7 @@ export default function Home() {
                         <img
                           src={thumbnail}
                           alt={title}
+                          loading="lazy"
                           className="w-full h-48 object-cover"
                         />
                       )}

@@ -1,6 +1,7 @@
-'use client'  // ← この1行を追加！
+'use client'
 
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Content } from '@/lib/notion/contents';
 
 interface ContentCardProps {
@@ -8,10 +9,26 @@ interface ContentCardProps {
 }
 
 export default function ContentCard({ content }: ContentCardProps) {
+  const router = useRouter();
+
+  // 画像クリック時のハンドラー
+  const handleImageClick = () => {
+    router.push(`/content/${content.id}`);
+  };
+
+  // タイトルクリック時のハンドラー
+  const handleTitleClick = () => {
+    router.push(`/content/${content.id}`);
+  };
+
   return (
     <div className="group overflow-hidden rounded-lg border border-gray-200 
                     hover:shadow-lg transition-all duration-300">
-      <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
+      {/* 画像部分 - クリックで遷移 */}
+      <div 
+        onClick={handleImageClick}
+        className="relative aspect-[3/4] overflow-hidden bg-gray-100 cursor-pointer"
+      >
         {content.thumbnail ? (
           <Image
             src={content.thumbnail}
@@ -27,15 +44,23 @@ export default function ContentCard({ content }: ContentCardProps) {
           </div>
         )}
       </div>
+      
       <div className="p-4">
-        <h3 className="font-bold text-base mb-2 line-clamp-2">
+        {/* タイトル - クリックで遷移 */}
+        <h3 
+          onClick={handleTitleClick}
+          className="font-bold text-base mb-2 line-clamp-2 hover:text-blue-600 
+                     transition-colors cursor-pointer"
+        >
           {content.title}
         </h3>
+        
         {content.publishedDate && (
           <p className="text-xs text-gray-500 mb-2">
             {new Date(content.publishedDate).toLocaleDateString('ja-JP')}
           </p>
         )}
+        
         {content.categories.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
             {content.categories.slice(0, 3).map((cat, idx) => (
@@ -48,6 +73,7 @@ export default function ContentCard({ content }: ContentCardProps) {
             ))}
           </div>
         )}
+        
         {content.affiliateUrl && (
           <a
             href={content.affiliateUrl}

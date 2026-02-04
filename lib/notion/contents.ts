@@ -153,35 +153,49 @@ export async function getContentsByCategory(category: string): Promise<Content[]
 }
 
 /**
- * 全てのコンテンツを取得
+ * 全てのコンテンツを取得（ページネーション対応）
  */
 export async function getAllContents(): Promise<Content[]> {
-  const response = await notion.databases.query({
-    database_id: CONTENT_DB_ID,
-    filter: {
-      property: '公開ステータス',
-      checkbox: { equals: true },
-    },
-    sorts: [
-      {
-        property: '公開日',
-        direction: 'descending',
+  const allContents: Content[] = [];
+  let hasMore = true;
+  let startCursor: string | undefined = undefined;
+  
+  while (hasMore) {
+    const response = await notion.databases.query({
+      database_id: CONTENT_DB_ID,
+      filter: {
+        property: '公開ステータス',
+        checkbox: { equals: true },
       },
-    ],
-    page_size: 100,
-  });
+      sorts: [
+        {
+          property: '公開日',
+          direction: 'descending',
+        },
+      ],
+      page_size: 100, // 1回のリクエストで最大100件
+      start_cursor: startCursor,
+    });
 
-  return response.results.map((page: any) => ({
-    id: page.id,
-    title: page.properties['タイトル'].title[0]?.plain_text || '',
-    thumbnail: page.properties['サムネイル'].files[0]?.file?.url || 
-               page.properties['サムネイル'].files[0]?.external?.url || 
-               null,
-    affiliateUrl: page.properties['アフィリエイトURL'].url || '',
-    publishedDate: page.properties['公開日'].date?.start || null,
-    categories: page.properties['カテゴリ'].multi_select?.map(
-      (cat: any) => cat.name
-    ) || [],
-    genre: page.properties['ジャンル'].select?.name || undefined,
-  }));
+    const contents = response.results.map((page: any) => ({
+      id: page.id,
+      title: page.properties['タイトル'].title[0]?.plain_text || '',
+      thumbnail: page.properties['サムネイル'].files[0]?.file?.url || 
+                 page.properties['サムネイル'].files[0]?.external?.url || 
+                 null,
+      affiliateUrl: page.properties['アフィリエイトURL'].url || '',
+      publishedDate: page.properties['公開日'].date?.start || null,
+      categories: page.properties['カテゴリ'].multi_select?.map(
+        (cat: any) => cat.name
+      ) || [],
+    }));
+
+    allContents.push(...contents);
+    
+    // 次のページがあるかチェック
+    hasMore = response.has_more;
+    startCursor = response.next_cursor || undefined;
+  }
+
+  return allContents;
 }

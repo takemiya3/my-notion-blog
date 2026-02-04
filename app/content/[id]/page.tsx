@@ -10,10 +10,9 @@ import SampleImageGallery from './SampleImageGallery';
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 // ✅ ISR設定
-export const revalidate = 3600; // 60 → 3600 に変更
-export const dynamicParams = true; // 追加
+export const revalidate = 3600;
+export const dynamicParams = true;
 
-// 以下は既存のコードをそのまま維持
 async function getContentData(contentId: string) {
   try {
     const content = await notion.pages.retrieve({ page_id: contentId });
@@ -53,7 +52,6 @@ async function getRelatedContents(
   limit: number = 10
 ) {
   try {
-    // まず、カテゴリ/ジャンルで絞り込んで取得
     const filters: any[] = [
       {
         property: '公開ステータス',
@@ -178,9 +176,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     title: seoTitle,
     description: metaDescription.slice(0, 160),
     keywords: [
-      title, 
-      ...performerNames.split('、').filter(Boolean), 
-      ...categoryNames.split('、').filter(Boolean), 
+      title,
+      ...performerNames.split('、').filter(Boolean),
+      ...categoryNames.split('、').filter(Boolean),
       '制服AV', '制服エロ動画', '制服動画', 'アダルト動画', 'FANZA'
     ],
     openGraph: {
@@ -323,6 +321,37 @@ export default async function ContentPage({ params }: { params: Promise<{ id: st
                       className="w-full h-auto object-cover rounded-lg shadow-md"
                       priority
                     />
+                  </div>
+                )}
+
+                {/* ✅ サンプル動画セクション */}
+                {(properties['アフィリエイトHTML']?.rich_text?.[0]?.plain_text || 
+                  properties['サンプル動画']?.url) && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-bold mb-3 text-black">🎬 サンプル動画</h3>
+                    <div className="bg-gray-100 rounded-lg overflow-hidden shadow-md">
+                      {/* アフィリエイトHTMLがある場合は埋め込み動画を表示 */}
+                      {properties['アフィリエイトHTML']?.rich_text?.[0]?.plain_text ? (
+                        <div 
+                          dangerouslySetInnerHTML=
+                            {{__html: properties['アフィリエイトHTML'].rich_text[0].plain_text}}
+                          
+                        />
+                      ) : properties['サンプル動画']?.url ? (
+                        // サンプル動画URLがある場合
+                        <div className="aspect-video">
+                          <iframe
+                            src={properties['サンプル動画'].url}
+                            width="100%"
+                            height="100%"
+                            frameBorder="0"
+                            allowFullScreen
+                            className="w-full h-full"
+                            title="サンプル動画"
+                          />
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 )}
 

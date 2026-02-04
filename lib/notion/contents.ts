@@ -4,6 +4,7 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 const CONTENT_DB_ID = 'f0c63b2acda54155a4110980219c6a2f';
 
+// ✅ Content型を完全版に拡張
 export interface Content {
   id: string;
   title: string;
@@ -11,7 +12,11 @@ export interface Content {
   affiliateUrl: string;
   publishedDate: string | null;
   categories: string[];
-  performers?: string[];
+  performers?: string;
+  sampleImages?: string[];
+  sampleVideo?: string;
+  affiliateHtml?: string;
+  views?: number;
   genre?: string;
 }
 
@@ -47,8 +52,8 @@ export async function getContentsByUniformCategory(
   return response.results.map((page: any) => ({
     id: page.id,
     title: page.properties['タイトル'].title[0]?.plain_text || '',
-    thumbnail: page.properties['サムネイル'].files[0]?.file?.url || 
-               page.properties['サムネイル'].files[0]?.external?.url || 
+    thumbnail: page.properties['サムネイル'].files[0]?.file?.url ||
+               page.properties['サムネイル'].files[0]?.external?.url ||
                null,
     affiliateUrl: page.properties['アフィリエイトURL'].url || '',
     publishedDate: page.properties['公開日'].date?.start || null,
@@ -88,8 +93,8 @@ export async function getContentsByPerson(personId: string): Promise<Content[]> 
   return response.results.map((page: any) => ({
     id: page.id,
     title: page.properties['タイトル'].title[0]?.plain_text || '',
-    thumbnail: page.properties['サムネイル'].files[0]?.file?.url || 
-               page.properties['サムネイル'].files[0]?.external?.url || 
+    thumbnail: page.properties['サムネイル'].files[0]?.file?.url ||
+               page.properties['サムネイル'].files[0]?.external?.url ||
                null,
     affiliateUrl: page.properties['アフィリエイトURL'].url || '',
     publishedDate: page.properties['公開日'].date?.start || null,
@@ -130,8 +135,8 @@ export async function getContentsByGenre(genre: string): Promise<Content[]> {
   return response.results.map((page: any) => ({
     id: page.id,
     title: page.properties['タイトル'].title[0]?.plain_text || '',
-    thumbnail: page.properties['サムネイル'].files[0]?.file?.url || 
-               page.properties['サムネイル'].files[0]?.external?.url || 
+    thumbnail: page.properties['サムネイル'].files[0]?.file?.url ||
+               page.properties['サムネイル'].files[0]?.external?.url ||
                null,
     affiliateUrl: page.properties['アフィリエイトURL'].url || '',
     publishedDate: page.properties['公開日'].date?.start || null,
@@ -159,7 +164,7 @@ export async function getAllContents(): Promise<Content[]> {
   const allContents: Content[] = [];
   let hasMore = true;
   let startCursor: string | undefined = undefined;
-  
+
   while (hasMore) {
     const response = await notion.databases.query({
       database_id: CONTENT_DB_ID,
@@ -180,8 +185,8 @@ export async function getAllContents(): Promise<Content[]> {
     const contents = response.results.map((page: any) => ({
       id: page.id,
       title: page.properties['タイトル'].title[0]?.plain_text || '',
-      thumbnail: page.properties['サムネイル'].files[0]?.file?.url || 
-                 page.properties['サムネイル'].files[0]?.external?.url || 
+      thumbnail: page.properties['サムネイル'].files[0]?.file?.url ||
+                 page.properties['サムネイル'].files[0]?.external?.url ||
                  null,
       affiliateUrl: page.properties['アフィリエイトURL'].url || '',
       publishedDate: page.properties['公開日'].date?.start || null,
@@ -191,11 +196,48 @@ export async function getAllContents(): Promise<Content[]> {
     }));
 
     allContents.push(...contents);
-    
+
     // 次のページがあるかチェック
     hasMore = response.has_more;
     startCursor = response.next_cursor || undefined;
   }
 
   return allContents;
+}
+
+/**
+ * IDから個別コンテンツを取得（詳細ページ用）
+ */
+export async function getContentById(id: string): Promise<Content | null> {
+  try {
+    const page: any = await notion.pages.retrieve({ page_id: id });
+    
+    if (!page.properties) {
+      return null;
+    }
+
+    return {
+      id: page.id,
+      title: page.properties['タイトル'].title[0]?.plain_text || '',
+      thumbnail: page.properties['サムネイル'].files[0]?.file?.url || 
+                 page.properties['サムネイル'].files[0]?.external?.url || 
+                 null,
+      affiliateUrl: page.properties['アフィリエイトURL'].url || '',
+      publishedDate: page.properties['公開日'].date?.start || null,
+      categories: page.properties['カテゴリ'].multi_select?.map(
+        (cat: any) => cat.name
+      ) || [],
+      performers: page.properties['出演者名'].rich_text[0]?.plain_text || '',
+      sampleImages: page.properties['サンプル画像'].files?.map((file: any) => 
+        file.file?.url || file.external?.url
+      ).filter(Boolean) || [],
+      sampleVideo: page.properties['サンプル動画'].url || '',
+      affiliateHtml: page.properties['アフィリエイトHTML'].rich_text[0]?.plain_text || '',
+      views: page.properties['閲覧数'].number || 0,
+      genre: page.properties['ジャンル'].select?.name || '',
+    };
+  } catch (error) {
+    console.error('Error fetching content:', error);
+    return null;
+  }
 }

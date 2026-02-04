@@ -33,9 +33,9 @@ export default function UniformCategoryCard({
       </div>
       <div className="p-4">
         <h3 className="font-bold text-lg mb-2 group-hover:text-blue-600 
-                       transition-colors">
-          {category.name}
-        </h3>
+               transition-colors text-black">  {/* ← text-black 追加 */}
+  {category.name}
+</h3>
         {category.description && (
           <p className="text-sm text-gray-600 line-clamp-2">
             {category.description}
